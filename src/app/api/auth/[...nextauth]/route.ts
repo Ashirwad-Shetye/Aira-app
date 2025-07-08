@@ -34,7 +34,7 @@ export const authOptions: AuthOptions = {
   ],
   secret: process.env.NEXTAUTH_SECRET,
   pages: {
-    signIn: "/signin",
+    signIn: "/login",
   },
   callbacks: {
     async session({ session, token }: { session: DefaultSession; token: JWT }) {
@@ -45,7 +45,7 @@ export const authOptions: AuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
-      if (url.includes("/signin")) {
+      if (url.includes("/login")) {
         return `${baseUrl}/dashboard`;
       }
       return url;

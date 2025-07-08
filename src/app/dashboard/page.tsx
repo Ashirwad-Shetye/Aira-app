@@ -9,8 +9,8 @@ export default async function DashboardPage() {
 		console.log("🧠 DASHBOARD SESSION:", session);
 
 		if (!session || !session.user) {
-			console.log("🧠 No session found, redirecting to /signin");
-			redirect("/signin");
+			console.log("🧠 No session found, redirecting to /login");
+			redirect("/login");
 		}
 
 		return (
@@ -21,6 +21,6 @@ export default async function DashboardPage() {
 		);
 	} catch (error) {
 		console.error("🧠 Error fetching session:", error);
-		redirect("/signin");
+		redirect("/login");
 	}
 }

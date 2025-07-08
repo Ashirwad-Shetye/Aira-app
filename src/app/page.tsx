@@ -24,7 +24,7 @@ export default async function LandingPage() {
 
 			<div className='flex flex-col sm:flex-row gap-4'>
 				<Link
-					href='/signin'
+					href='/login'
 					className='px-6 py-3 bg-black text-white rounded-full hover:bg-neutral-800 transition'
 				>
 					Login / Sign Up
