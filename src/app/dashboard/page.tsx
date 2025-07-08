@@ -1,5 +1,6 @@
 // src/app/dashboard/page.tsx
 import AuthButtons from "@/components/auth-buttons";
+import LeftNavbar from "@/components/left-navbar/left-navbar";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 
@@ -14,9 +15,14 @@ export default async function DashboardPage() {
 		}
 
 		return (
-			<div className='p-10'>
-				<AuthButtons />
-				<h1 className='text-xl font-bold'>Welcome, {session.user.email}</h1>
+			<div className='p-5 flex flex-col relative w-full flex-1'>
+				<div className='flex gap-10 flex-1'>
+					<LeftNavbar />
+					<div className='flex-grow'>
+						<AuthButtons />
+						<h1 className='text-xl font-bold'>Welcome, {session.user.email}</h1>
+					</div>
+				</div>
 			</div>
 		);
 	} catch (error) {
