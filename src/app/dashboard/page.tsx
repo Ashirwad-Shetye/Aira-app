@@ -19,7 +19,6 @@ export default async function DashboardPage() {
 				<div className='flex gap-10 flex-1'>
 					<LeftNavbar />
 					<div className='flex-grow'>
-						<AuthButtons />
 						<h1 className='text-xl font-bold'>Welcome, {session.user.email}</h1>
 					</div>
 				</div>
