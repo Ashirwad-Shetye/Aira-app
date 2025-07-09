@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { signOut, useSession } from "next-auth/react";
+import Icons from "../ui/icons";
 
 type Props = {};
 
@@ -18,7 +19,7 @@ const ProfileMenu = (props: Props) => {
 	const { data: session } = useSession();
 	return (
 		<DropdownMenu>
-			<DropdownMenuTrigger className='outline-none focus:ring-0'>
+			<DropdownMenuTrigger className='outline-none focus:ring-0 cursor-pointer'>
 				<Avatar className='w-10 h-10 shrink-0 rounded overflow-hidden outline-none focus:ring-0'>
 					<AvatarImage
 						src={session?.user.image ?? ""}
@@ -32,11 +33,11 @@ const ProfileMenu = (props: Props) => {
 				align='end'
 				sideOffset={20}
 			>
-				<DropdownMenuItem>Profile</DropdownMenuItem>
-				<DropdownMenuItem>Billing</DropdownMenuItem>
-				<DropdownMenuItem>Team</DropdownMenuItem>
-				<DropdownMenuItem>
-					<div onClick={() => signOut()}>
+				<DropdownMenuItem className='cursor-pointer'>Profile</DropdownMenuItem>
+				<DropdownMenuItem className='cursor-pointer'>Billing</DropdownMenuItem>
+				<DropdownMenuItem className='cursor-pointer'>
+                    <div className="flex items-center gap-1" onClick={() => signOut()}>
+                        <Icons.signout className="shrink-0"/>
 						<h1>Logout</h1>
 					</div>
 				</DropdownMenuItem>

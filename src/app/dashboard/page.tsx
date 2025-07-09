@@ -1,5 +1,4 @@
 // src/app/dashboard/page.tsx
-import AuthButtons from "@/components/auth-buttons";
 import LeftNavbar from "@/components/left-navbar/left-navbar";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
