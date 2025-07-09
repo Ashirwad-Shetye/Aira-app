@@ -133,6 +133,8 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-pt-sans: var(--font-pt-sans);
+  --font-cabin: var(--font-cabin);
 }
 
 @media (prefers-color-scheme: light) {
@@ -145,5 +147,5 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), var(--font-pt-sans), var(--font-cabin), Arial, Helvetica, sans-serif;
 }

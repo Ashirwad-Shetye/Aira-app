@@ -48,7 +48,7 @@ const LeftNavbar = ( props: Props ) => {
 	return (
 		<div className='border bg-white rounded-lg flex p-2 pb-0 shadow flex-col relative items-center justify-between'>
 			<div className='flex flex-col gap-10'>
-				<div className='w-10 h-10 rounded-md bg-gray-100'>.</div>
+				<div onClick={() => redirect("/dashboard")} className='w-10 h-10 rounded-md bg-gray-100 cursor-pointer'></div>
 				<div className='flex flex-col items-center justify-between gap-3'>
 					{navbarVals.map((navbarVal, idx) => (
 						<Tooltip key={`${navbarVal}_${idx}`}>

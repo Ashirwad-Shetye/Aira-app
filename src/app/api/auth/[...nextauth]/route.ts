@@ -9,19 +9,17 @@ const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-// Extend the default Session type to include custom properties
 declare module "next-auth" {
   interface Session {
     user: {
-      id?: string; // Add custom `id` property to user
+      id?: string;
     } & DefaultSession["user"];
   }
 }
 
-// Extend the JWT type to include custom properties
 declare module "next-auth/jwt" {
   interface JWT {
-    sub?: string; // Ensure `sub` is available in the token
+    sub?: string;
   }
 }
 
@@ -40,7 +38,7 @@ export const authOptions: AuthOptions = {
     async session({ session, token }: { session: DefaultSession; token: JWT }) {
       console.log("🧠 Session callback:", { session, token });
       if (token.sub && session.user) {
-        (session.user as typeof session.user & { id?: string }).id = token.sub; // Assign token.sub to session.user.id
+        (session.user as typeof session.user & { id?: string }).id = token.sub;
       }
       return session;
     },
@@ -57,7 +55,7 @@ export const authOptions: AuthOptions = {
       await supabaseAdmin
         .from("users")
         .upsert({
-          id: user.id,  // token.sub → stored as session.user.id
+          id: user.id,
           email: user.email,
           full_name: user.name,
           avatar_url: user.image,
