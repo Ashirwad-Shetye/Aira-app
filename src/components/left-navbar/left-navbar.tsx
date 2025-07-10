@@ -8,6 +8,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import Image from "next/image";
 
 type Props = {};
 
@@ -36,11 +37,11 @@ const LeftNavbar = ( props: Props ) => {
                 },
 			},
 			{
-				key: "diaries",
-				label: "Diaries",
+				key: "flows",
+				label: "Flows",
 				icon: <Icons.notebook />,
                 callback: () => {
-                    redirect("/diaries");
+                    redirect("/flows");
                 },
 			},
         ];
@@ -48,7 +49,19 @@ const LeftNavbar = ( props: Props ) => {
 	return (
 		<div className='border bg-white rounded-lg flex p-2 pb-0 shadow flex-col relative items-center justify-between'>
 			<div className='flex flex-col gap-10'>
-				<div onClick={() => redirect("/dashboard")} className='w-10 h-10 rounded-md bg-gray-100 cursor-pointer'></div>
+				<div
+					onClick={() => redirect("/dashboard")}
+					className='w-10 h-10 bg-gray-100 object-contain cursor-pointer'
+				>
+					<Image
+						src={"/logo_aira.png"}
+						alt='aira_logo'
+						height={200}
+						width={200}
+						className='w-full h-full'
+						unoptimized
+					/>
+				</div>
 				<div className='flex flex-col items-center justify-between gap-3'>
 					{navbarVals.map((navbarVal, idx) => (
 						<Tooltip key={`${navbarVal}_${idx}`}>
@@ -62,8 +75,11 @@ const LeftNavbar = ( props: Props ) => {
 									{navbarVal.icon}
 								</button>
 							</TooltipTrigger>
-							<TooltipContent side="right" sideOffset={10}>
-                                <p>{navbarVal.label}</p>
+							<TooltipContent
+								side='right'
+								sideOffset={10}
+							>
+								<p>{navbarVal.label}</p>
 							</TooltipContent>
 						</Tooltip>
 					))}

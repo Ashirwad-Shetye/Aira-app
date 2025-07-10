@@ -17,6 +17,7 @@ type Props = {};
 
 const ProfileMenu = (props: Props) => {
 	const { data: session } = useSession();
+	console.log(session)
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger className='outline-none focus:ring-0 cursor-pointer'>
@@ -24,8 +25,9 @@ const ProfileMenu = (props: Props) => {
 					<AvatarImage
 						src={session?.user.image ?? ""}
 						alt='@shadcn'
+						className='border-2'
 					/>
-					<AvatarFallback>CN</AvatarFallback>
+					<AvatarFallback className='w-10 h-10 border-2'>CN</AvatarFallback>
 				</Avatar>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent
@@ -36,8 +38,11 @@ const ProfileMenu = (props: Props) => {
 				<DropdownMenuItem className='cursor-pointer'>Profile</DropdownMenuItem>
 				<DropdownMenuItem className='cursor-pointer'>Billing</DropdownMenuItem>
 				<DropdownMenuItem className='cursor-pointer'>
-                    <div className="flex items-center gap-1" onClick={() => signOut()}>
-                        <Icons.signout className="shrink-0"/>
+					<div
+						className='flex items-center gap-1'
+						onClick={() => signOut()}
+					>
+						<Icons.signout className='shrink-0' />
 						<h1>Logout</h1>
 					</div>
 				</DropdownMenuItem>

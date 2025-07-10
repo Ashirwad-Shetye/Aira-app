@@ -1,4 +1,5 @@
-import React from 'react'
+"use client"
+import React, { useEffect, useState } from 'react'
 
 type Props = {
     userName: string
@@ -6,32 +7,42 @@ type Props = {
 }
 
 const Greetings = ({userName, align}: Props) => {
-  const now = new Date();
-  const hours = now.getHours();
+  const [greeting, setGreeting] = useState<string>('');
+  const [formattedDate, setFormattedDate] = useState<string>('');
+  const [mounted, setMounted] = useState(false);
 
-  let greeting = 'Hello';
-  if (hours < 12) {
-    greeting = 'Good morning';
-  } else if (hours < 18) {
-    greeting = 'Good afternoon';
-  } else {
-    greeting = 'Good evening';
-  }
+  useEffect(() => {
+    const now = new Date();
+    const hours = now.getHours();
+    let greet = 'Hello';
+    if (hours < 12) {
+      greet = 'Good morning';
+    } else if (hours < 18) {
+      greet = 'Good afternoon';
+    } else {
+      greet = 'Good evening';
+    }
+    setGreeting(greet);
+    setFormattedDate(
+      now.toLocaleDateString(undefined, {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+      })
+    );
+    setMounted(true);
+  }, []);
 
-  const formattedDate = now.toLocaleDateString(undefined, {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  });
+  if (!mounted) return null;
 
   return (
-		<div>
-			<h1 className={`text-${align} font-pt-sans text-2xl`}>
-				{greeting}, {userName}
-			</h1>
-			<p className='text-xl text-gray-500'>{formattedDate}</p>
-		</div>
-	);
+    <div>
+      <h1 className={`text-${align} font-pt-sans text-2xl`}>
+        {greeting}, {userName}
+      </h1>
+      <p className='text-xl text-gray-500'>{formattedDate}</p>
+    </div>
+  );
 }
 
 export default Greetings
