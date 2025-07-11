@@ -43,7 +43,7 @@ export const authOptions: AuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
-      if (url.includes("/login")) {
+      if (url === `${baseUrl}/login` || url === `${baseUrl}/`) {
         return `${baseUrl}/dashboard`;
       }
       return url;
@@ -86,4 +86,10 @@ export const authOptions: AuthOptions = {
 };
 
 const handler = NextAuth(authOptions);
-export { handler as GET, handler as POST };
+
+export const GET = async (req: Request, ctx: any) => {
+  return await handler(req, ctx);
+};
+export const POST = async (req: Request, ctx: any) => {
+  return await handler(req, ctx);
+};

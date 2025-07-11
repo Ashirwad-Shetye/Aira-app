@@ -60,6 +60,7 @@ const LeftNavbar = ( props: Props ) => {
 						width={200}
 						className='w-full h-full'
 						unoptimized
+						priority
 					/>
 				</div>
 				<div className='flex flex-col items-center justify-between gap-3'>

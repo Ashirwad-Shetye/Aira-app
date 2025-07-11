@@ -8,7 +8,9 @@ import {
 	PiMagnifyingGlass as search,
 	PiNotebook as notebook,
 	PiHouse as home,
+	PiDrop as moment,
 } from "react-icons/pi";
+import { LuWind as flow } from "react-icons/lu";
 
 const Icons = {
 	signout,
@@ -16,7 +18,9 @@ const Icons = {
 	notebook,
 	home,
 	fullscreen,
-	exitFullscreen,
+    exitFullscreen,
+    flow,
+    moment
 };
 
 export default Icons;

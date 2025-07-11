@@ -6,7 +6,6 @@ const PUBLIC_ROUTES = [
   '/login',
   '/about',
   '/pricing',
-  '/'
 ];
 
 export async function middleware(request: NextRequest) {
