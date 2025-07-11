@@ -1,5 +1,5 @@
 import "./globals.css";
-import { Geist, Geist_Mono, PT_Sans, Cabin } from "next/font/google";
+import { Geist, Geist_Mono, PT_Sans, Cabin, Epilogue } from "next/font/google";
 import { Providers } from "@/providers";
 
 const geistSans = Geist({
@@ -24,6 +24,13 @@ const cabin = Cabin({
 	weight: ["400", "700"],
 	style: ["normal", "italic"],
 	subsets: ["latin"],
+} );
+
+const epilogue = Epilogue({
+	variable: "--font-epilogue",
+	weight: ["400", "700"],
+	style: ["normal", "italic"],
+	subsets: ["latin"],
 });
 
 export const metadata = {
@@ -39,7 +46,7 @@ export default function RootLayout({
 	return (
 		<html lang='en'>
 			<body
-				className={`${geistSans.variable} ${geistMono.variable} ${ptSans.variable} ${cabin.variable} bg-[#F5FAF8] antialiased h-screen w-screen flex flex-col relative`}
+				className={`${geistSans.variable} ${geistMono.variable} ${ptSans.variable} ${cabin.variable} ${epilogue.variable} bg-[#F5FAF8] antialiased h-screen w-screen flex flex-col relative`}
 			>
 				<Providers>{children}</Providers>
 			</body>
