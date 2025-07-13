@@ -11,7 +11,7 @@ import { useSession } from "next-auth/react";
 import { Flow } from "@/types/flows";
 import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { formatDate } from "@/lib/date-convertors";
+import FlowCard from "@/components/flow/flow-card";
 
 const Flows = () => {
 	const [flows, setFlows] = useState<Flow[]>([]);
@@ -19,6 +19,8 @@ const Flows = () => {
 	const [error, setError] = useState<string | null>(null);
 	const { data: session, status } = useSession();
 	const [hasFetched, setHasFetched] = useState(false);
+	const [dialogOpen, setDialogOpen] = useState(false);
+	const [editFlow, setEditFlow] = useState<Flow | null>(null);
 	const router = useRouter();
 
 	const tags = [
@@ -94,9 +96,45 @@ const Flows = () => {
 
 		fetchFlows();
 	}, [session, status, hasFetched]);
-	
-	const handleOpenFlow = (flowId: string) => {
-    router.push(`/flows/${flowId}`);
+
+	const handleEditFlow = (flow: Flow) => {
+		setEditFlow(flow);
+		setDialogOpen(true);
+	};
+
+	async function handleDeleteFlow(flowId: string) {
+		setIsLoading(true);
+		setError(null);
+		const { error } = await supabase
+			.from("flows")
+			.delete()
+			.eq("id", flowId);
+		if (error) {
+			setError(error.message);
+			setIsLoading(false);
+			return;
+		}
+		setFlows((prev) => prev.filter(f => f.id !== flowId));
+		setIsLoading(false);
+	}
+
+	async function handleSaveFlow(data: { id?: string; title: string; bio?: string }) {
+		if (!data.id) return;
+		setIsLoading(true);
+		setError(null);
+		const { error } = await supabase
+			.from("flows")
+			.update({ title: data.title, bio: data.bio })
+			.eq("id", data.id);
+		if (error) {
+			setError(error.message);
+			setIsLoading(false);
+			return;
+		}
+		setFlows((prev) => prev.map(f => f.id === data.id ? { ...f, title: data.title, bio: data.bio } : f));
+		setDialogOpen(false);
+		setEditFlow(null);
+		setIsLoading(false);
 	}
 
 	return (
@@ -119,18 +157,23 @@ const Flows = () => {
 								</div>
 							</div>
 							{error && (
-								<div
-									aria-live='polite'
-									className='text-destructive'
-								>
+								<div aria-live='polite' className='text-destructive'>
 									{error}
 								</div>
 							)}
 							<div className='flex gap-5'>
-								<NewFlowDialog />
+								<NewFlowDialog
+									open={dialogOpen}
+									onOpenChange={(open) => {
+										setDialogOpen(open);
+										if (!open) setEditFlow(null);
+									}}
+									flow={editFlow ?? undefined}
+									onSave={editFlow ? handleSaveFlow : undefined}
+								/>
 								<button
 									type='button'
-									className='px-10 h-20 group cursor-pointer select-none font-pt-sans text-lg font-semibold rounded-lg text-white bg-gradient-to-br from-[#b7da81] to-[#E8F2D9] flex items-center justify-center'
+									className='px-10 h-20 group cursor-pointer select-none font-pt-sans text-lg font-semibold rounded-lg text-white bg-gradient-to-br from-[#E8F2D9] via-[#b7da81] to-[#E8F2D9] flex items-center justify-center'
 									aria-label='Create new moment in flow'
 								>
 									<div className='group-hover:scale-105 gap-2 duration-200 group-active:scale-95 flex items-center justify-center'>
@@ -154,35 +197,13 @@ const Flows = () => {
 										) : (
 											<div className='grid grid-cols-4'>
 												{flows.map((flow, idx) => (
-													<div
-														onClick={() => handleOpenFlow(flow.id)}
+													<FlowCard
 														key={`${flow.id}_${idx}`}
-														className='p-5 border rounded-xl flex flex-col gap-5 bg-white hover:shadow duration-150'
-													>
-														<div className='flex items-center gap-5'>
-															{flow.id === flows[0].id && (
-																<p className='text-sm bg-amber-600 text-white px-2 py-0.5 rounded-full w-fit'>
-																	Latest
-																</p>
-															)}
-															<p className="text-gray-500">{formatDate(flow.created_at)}</p>
-														</div>
-														<div className="flex flex-col gap-2">
-															<h1 className='font-epilogue text-[1.25rem]'>
-																{flow.title}
-															</h1>
-															{flow.bio && <p>{flow.bio}</p>}
-															<p className="font-epilogue text-sm text-gray-500">
-																Capture and turn your voice recordings, text
-																notes, images, audio files, and YouTube videos
-																into perfect notes for meetings, journals,
-																lectures, emails, and more!
-															</p>
-														</div>
-														<div>
-															{/* controls */}
-														</div>
-													</div>
+														flow={flow}
+														latestFlow={flow.id === flows[0].id}
+														onEdit={handleEditFlow}
+														onDelete={handleDeleteFlow}
+													/>
 												))}
 											</div>
 										)}
@@ -190,8 +211,8 @@ const Flows = () => {
 								</>
 							)}
 						</div>
+						<BottomControls />
 					</div>
-					<BottomControls />
 				</div>
 			</div>
 		</div>

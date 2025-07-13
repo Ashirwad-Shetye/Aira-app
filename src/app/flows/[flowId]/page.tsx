@@ -8,19 +8,23 @@ import LeftNavbar from "@/components/left-navbar/left-navbar";
 import { Button } from "@/components/ui/button";
 import Icons from "@/components/ui/icons";
 import { supabase } from "@/lib/supabase/client";
+import { Flow } from "@/types/flows";
 
 const FlowIdPage = () => {
 	const { flowId } = useParams();
-	const [flowTitle, setFlowTitle] = useState("...");
+	const [flow, setFlow] = useState<Flow | null>(null);
+	const [hasFetched, setHasFetched] = useState(false);
 	const router = useRouter();
 
 	useEffect(() => {
-		async function fetchFlow() {
-			if (!flowId || typeof flowId !== "string") return;
+		if (hasFetched || !flowId || typeof flowId !== "string") {
+			return;
+		}
 
+		async function fetchFlow() {
 			const { data, error } = await supabase
 				.from("flows")
-				.select("title")
+				.select("*")
 				.eq("id", flowId)
 				.single();
 
@@ -29,11 +33,12 @@ const FlowIdPage = () => {
 				return;
 			}
 
-			setFlowTitle(data.title);
+			setFlow(data);
+			setHasFetched(true);
 		}
 
 		fetchFlow();
-	}, [flowId]);
+	}, [flowId, hasFetched]);
 
 	return (
 		<div className='p-5 flex flex-col overflow-hidden relative w-full flex-1'>
@@ -45,10 +50,12 @@ const FlowIdPage = () => {
 							<Button
 								variant={"secondary"}
 								onClick={() => router.back()}
+								className="flex items-center gap-1 text-gray-500"
 							>
-								Back
+								<Icons.arrowLeft />
+								<p>Back</p>
 							</Button>
-							<h1 className='font-pt-sans text-2xl'>{flowTitle}</h1>
+							<h1 className='font-pt-sans text-2xl'>{flow?.title || "..."}</h1>
 						</div>
 						<div className='flex flex-1 gap-5 flex-col relative overflow-hidden'>
 							<div>

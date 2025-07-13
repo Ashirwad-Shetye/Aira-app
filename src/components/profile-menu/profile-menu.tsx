@@ -14,7 +14,7 @@ import Icons from "../ui/icons";
 const ProfileMenu = () => {
 	const { data: session, status } = useSession();
 
-	// console.log("ProfileMenu session:", { session, status });
+	console.log("ProfileMenu session:", { session, status });
 
 	if (status === "loading") {
 		return (
@@ -29,6 +29,7 @@ const ProfileMenu = () => {
 	}
 
 	const userImage = session?.user?.image ?? ""
+	console.log(userImage);
 	const userName = session?.user?.name || "NA";
 	const initials = userName
 		.split(" ")

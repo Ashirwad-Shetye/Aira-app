@@ -9,8 +9,12 @@ import {
 	PiNotebook as notebook,
 	PiHouse as home,
 	PiDrop as moment,
+	PiCaretLeft as arrowLeft,
 } from "react-icons/pi";
 import { LuWind as flow } from "react-icons/lu";
+import { GoPlus as add } from "react-icons/go";
+import { RxDotsHorizontal as menuDots } from "react-icons/rx";
+
 
 const Icons = {
 	signout,
@@ -20,7 +24,10 @@ const Icons = {
 	fullscreen,
     exitFullscreen,
     flow,
-    moment
+	moment,
+	arrowLeft,
+	add,
+	menuDots
 };
 
 export default Icons;
