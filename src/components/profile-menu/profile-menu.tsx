@@ -14,8 +14,6 @@ import Icons from "../ui/icons";
 const ProfileMenu = () => {
 	const { data: session, status } = useSession();
 
-	console.log("ProfileMenu session:", { session, status });
-
 	if (status === "loading") {
 		return (
 			<div className='w-10 h-10 bg-gray-200 select-none text-gray-200 rounded animate-pulse flex items-center justify-center'>

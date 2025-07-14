@@ -1,4 +1,4 @@
-// src/app/diaries/page.tsx
+// src/app/flows/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -76,7 +76,7 @@ const Flows = () => {
 				}
 				const { data, error } = await supabase
 					.from("flows")
-					.select("*")
+					.select("id, title, bio, created_at, updated_at, user_id")
 					.eq("user_id", session.user.id)
 					.order("created_at", { ascending: false });
 
