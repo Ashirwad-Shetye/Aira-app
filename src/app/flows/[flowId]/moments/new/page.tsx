@@ -4,98 +4,66 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
-import { v4 as uuidv4 } from "uuid";
 import debounce from "lodash/debounce";
-import BottomControls from "@/components/bottom-controls/bottom-controls";
-import LeftNavbar from "@/components/left-navbar/left-navbar";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import Icons from "@/components/ui/icons";
-import { Flow } from "@/types/flows";
+import BottomControls from "@/components/bottom-controls/bottom-controls";
+import LeftNavbar from "@/components/left-navbar/left-navbar";
 import CustomBreadcrumb from "@/components/custom-breadcrumb/custom-breadcrumb";
 
 const NewMoment = () => {
 	const { flowId } = useParams();
 	const router = useRouter();
-	const [flow, setFlow] = useState<Flow | null>(null);
+	const { data: session, status } = useSession();
+
 	const [momentId, setMomentId] = useState<string>("");
 	const [title, setTitle] = useState<string>("");
 	const [content, setContent] = useState<string>("");
 	const [isSaving, setIsSaving] = useState<boolean>(false);
-	const [isLoadingFlow, setIsLoadingFlow] = useState<boolean>(true);
 
-	useEffect(() => {
-		async function fetchFlow() {
-			if (!flowId || typeof flowId !== "string") return;
-			setIsLoadingFlow(true);
-			const { data, error } = await supabase
-				.from("flows")
-				.select("*")
-				.eq("id", flowId)
-				.single();
-			if (error) {
-				console.error("❌ Failed to fetch flow:", error);
-				return;
-			}
-			setFlow(data);
-			setIsLoadingFlow(false);
-		}
-		fetchFlow();
-	}, [flowId]);
+	const createMoment = async (newTitle: string, newContent: string) => {
+		if (!flowId || typeof flowId !== "string" || !session?.user?.id) return;
 
-	// Auto-create a new moment entry when the page loads
-	useEffect(() => {
-		if (!momentId && flowId && typeof flowId === "string") {
-			const newId = uuidv4();
-			setMomentId(newId);
-			const createMoment = async () => {
-				const { data, error } = await supabase.from("moments").insert({
-					id: newId,
-					flow_id: flowId,
-					title: "",
-					content: "",
-				});
-				if (error) console.error("❌ Failed to create moment:", error);
-			};
-			createMoment();
-		}
-	}, [flowId, momentId]);
-
-	// Save moment to Supabase
-	const saveMoment = async (updatedTitle: string, updatedContent: string) => {
-		if (!momentId) return;
-		setIsSaving(true);
 		const { data, error } = await supabase
 			.from("moments")
-			.update({
-				title: updatedTitle,
-				content: updatedContent,
-				updated_at: new Date().toISOString(),
+			.insert({
+				flow_id: flowId,
+				title: newTitle,
+				content: newContent,
+				user_id: session.user.id,
 			})
-			.eq("id", momentId);
-		if (error) {
-			console.error("❌ Error saving moment:", error);
+			.select("id")
+			.single();
+
+		if (error || !data?.id) {
+			console.error("❌ Failed to create moment:", error);
+			return;
 		}
-		setIsSaving(false);
+
+		localStorage.setItem(`aira-last-draft-${flowId}`, data.id);
+		router.replace(`/flows/${flowId}/moments/${data.id}`);
 	};
 
-	// Debounced version
-	const debouncedSave = useCallback(
+	const debouncedTrigger = useCallback(
 		debounce((t: string, c: string) => {
-			saveMoment(t, c);
-		}, 2000),
-		[momentId]
+			if ((t.trim() !== "" || c.trim() !== "") && !momentId) {
+				createMoment(t, c);
+			}
+		}, 1000),
+		[momentId, session?.user?.id, flowId]
 	);
 
 	const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const value = e.target.value;
 		setTitle(value);
-		debouncedSave(value, content);
+		debouncedTrigger(value, content);
 	};
 
 	const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
 		const value = e.target.value;
 		setContent(value);
-		debouncedSave(title, value);
+		debouncedTrigger(title, value);
 	};
 
 	return (
@@ -103,7 +71,7 @@ const NewMoment = () => {
 			<div className='flex gap-5 flex-1 relative'>
 				<LeftNavbar />
 				<div className='flex flex-col overflow-hidden relative w-full'>
-					<div className='flex-1 flex flex-col gap-5 relative'>
+					<div className='flex-1 flex flex-col gap-10 relative'>
 						<div className='flex items-center gap-5'>
 							<Button
 								variant={"secondary"}
@@ -113,34 +81,36 @@ const NewMoment = () => {
 								<Icons.arrowLeft />
 								<p>Back</p>
 							</Button>
-							<CustomBreadcrumb 
-								flowId={flow?.id} 
-								flowTitle={flow?.title} 
-								momentId={momentId} 
-								momentTitle={title}
-								isLoading={isLoadingFlow}
+							<CustomBreadcrumb
+								flowId={flowId as string}
+								flowTitle={"New Flow"}
+								isLoading={false}
 							/>
 						</div>
-						<div className='flex flex-1 flex-col gap-4 overflow-y-auto pr-3'>
+						<div className='flex flex-1 flex-col gap-4 sm:w-full md:w-[70%] max-w-7xl mx-auto overflow-y-auto pr-3 pb-20'>
 							<input
 								type='text'
 								placeholder='Your moment title...'
-								className='text-2xl font-semibold w-full focus:outline-none'
+								className='text-3xl font-pt-sans w-full focus:outline-none'
 								value={title}
 								onChange={handleTitleChange}
 							/>
 							<textarea
 								placeholder='Start writing your thoughts...'
-								className='text-base min-h-[300px] w-full resize-none focus:outline-none'
+								className='text-base min-h-[300px] flex-1 w-full resize-none focus:outline-none'
 								value={content}
 								onChange={handleContentChange}
 							/>
-							<p className='text-sm text-gray-500'>
-								{isSaving ? "Saving..." : "All changes saved."}
+							<p className='text-sm text-muted-foreground'>
+								Start typing to create your Moment. It will auto-save once you
+								begin.
 							</p>
 						</div>
 					</div>
-					<BottomControls />
+					<BottomControls
+						status={true}
+						isSaving={isSaving}
+					/>
 				</div>
 			</div>
 		</div>

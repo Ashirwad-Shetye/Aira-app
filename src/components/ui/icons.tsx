@@ -10,11 +10,12 @@ import {
 	PiHouse as home,
 	PiDrop as moment,
 	PiCaretLeft as arrowLeft,
+	PiCheck as check,
 } from "react-icons/pi";
 import { LuWind as flow } from "react-icons/lu";
 import { GoPlus as add } from "react-icons/go";
 import { RxDotsHorizontal as menuDots } from "react-icons/rx";
-
+import { AiOutlineLoading3Quarters as loader } from "react-icons/ai";
 
 const Icons = {
 	signout,
@@ -27,7 +28,9 @@ const Icons = {
 	moment,
 	arrowLeft,
 	add,
-	menuDots
+	menuDots,
+	loader,
+	check
 };
 
 export default Icons;
