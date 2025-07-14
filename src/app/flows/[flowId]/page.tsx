@@ -1,4 +1,5 @@
-import { notFound, redirect } from "next/navigation";
+// src/app/flows/[flowId]/page.tsx
+import { notFound } from "next/navigation";
 import FlowIdClient from "./flow-id-client";
 import { supabase } from "@/lib/supabase/client";
 
@@ -17,8 +18,23 @@ export default async function FlowPage({
 
 	if (error || !flow) {
 		console.error("❌ Flow not found:", error);
-		notFound(); // shows 404 page
+		notFound();
 	}
 
-	return <FlowIdClient flow={flow} />;
+	const { data: moments, error: momentsError } = await supabase
+		.from("moments")
+		.select("id, title, created_at")
+		.eq("flow_id", flowId)
+		.order("created_at", { ascending: false });
+
+	if (momentsError) {
+		console.error("❌ Failed to fetch moments:", momentsError);
+	}
+
+	return (
+		<FlowIdClient
+			flow={flow}
+			moments={moments ?? []}
+		/>
+	);
 }
