@@ -1,20 +1,19 @@
 // src/app/api/auth/[...nextauth]/route.ts
 import NextAuth, { type AuthOptions, type DefaultSession } from "next-auth";
-import Google from "next-auth/providers/google";
+import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
-import type { JWT } from "next-auth/jwt";
 import { compare } from "bcryptjs";
 import { supabase, supabaseAdmin } from "@/lib/supabase/client";
 
-// Validate environment variables at startup
 const requiredEnvVars = [
   "GOOGLE_CLIENT_ID",
   "GOOGLE_CLIENT_SECRET",
   "NEXTAUTH_SECRET",
   "NEXT_PUBLIC_SUPABASE_URL",
-  "SUPABASE_SERVICE_ROLE_KEY",
+  "SUPABASE_SERVICE_KEY",
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
 ];
+
 for (const envVar of requiredEnvVars) {
   if (!process.env[envVar]) {
     throw new Error(`Missing environment variable: ${envVar}`);
@@ -37,7 +36,7 @@ declare module "next-auth/jwt" {
 
 export const authOptions: AuthOptions = {
   providers: [
-    Google({
+    GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
@@ -58,19 +57,14 @@ export const authOptions: AuthOptions = {
           .eq("email", credentials.email)
           .single();
 
-        if (error) {
-          console.error("Supabase query error in authorize:", error.code, error.message);
-          return null;
-        }
-
-        if (!data?.password_hash) {
-          console.error("No password hash found for user:", credentials.email);
+        if (error || !data?.password_hash) {
+          console.error("Credential login error:", error?.message);
           return null;
         }
 
         const isValid = await compare(credentials.password, data.password_hash);
         if (!isValid) {
-          console.error("Invalid password for user:", credentials.email);
+          console.error("Invalid password for:", credentials.email);
           return null;
         }
 
@@ -86,6 +80,7 @@ export const authOptions: AuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   pages: {
     signIn: "/login",
+    error: "/auth-error",
   },
   callbacks: {
     async session({ session, token }) {
@@ -103,38 +98,25 @@ export const authOptions: AuthOptions = {
     async signIn({ user, account }) {
       try {
         if (!user?.email) {
-          console.error("No email provided for sign-in");
+          console.error("❌ No email provided during sign-in");
           return false;
         }
 
+        // --- GOOGLE LOGIN FLOW ---
         if (account?.provider === "google") {
           const googleId = user.id;
 
           const { data: existing, error: lookupError } = await supabaseAdmin
-            .from("users")
-            .select("id, google_id")
-            .or(`google_id.eq.${googleId},email.eq.${user.email}`)
-            .single();
+          .from("users")
+          .select("id, google_id")
+          .or(`google_id.eq.${googleId},email.eq.${user.email}`)
+          .maybeSingle();
 
           if (lookupError && lookupError.code !== "PGRST116") {
-            console.error("Supabase lookup error:", lookupError.code, lookupError.message);
-            return false;
+            console.error("Supabase lookup error:", lookupError.message);
           }
 
-          if (existing?.id) {
-            if (!existing.google_id && googleId) {
-              const { error: updateError } = await supabaseAdmin
-                .from("users")
-                .update({ google_id: googleId })
-                .eq("id", existing.id);
-
-              if (updateError) {
-                console.error("Failed to link Google ID:", updateError.code, updateError.message);
-                return false;
-              }
-            }
-            user.id = existing.id;
-          } else {
+          if (!existing) {
             const { data: created, error: insertError } = await supabaseAdmin
               .from("users")
               .insert({
@@ -147,13 +129,27 @@ export const authOptions: AuthOptions = {
               .single();
 
             if (insertError || !created?.id) {
-              console.error("Failed to insert Google user:", insertError?.code, insertError?.message);
+              console.error("❌ Google insert failed:", insertError);
               return false;
             }
             user.id = created.id;
+          } else {
+            if (!existing.google_id && googleId) {
+              const { error: updateError } = await supabaseAdmin
+                .from("users")
+                .update({ google_id: googleId })
+                .eq("id", existing.id);
+
+              if (updateError) {
+                console.error("❌ Failed to link Google ID:", updateError);
+                return false;
+              }
+            }
+            user.id = existing.id;
           }
         }
 
+        // --- CREDENTIALS LOGIN FLOW ---
         if (account?.provider === "credentials") {
           const { data: existing, error } = await supabaseAdmin
             .from("users")
@@ -162,7 +158,7 @@ export const authOptions: AuthOptions = {
             .single();
 
           if (error || !existing?.id) {
-            console.error("User not found for credentials login:", error?.code, error?.message);
+            console.error("❌ Credentials lookup failed:", error);
             return false;
           }
           user.id = existing.id;
@@ -170,7 +166,7 @@ export const authOptions: AuthOptions = {
 
         return true;
       } catch (err) {
-        console.error("signIn error:", err instanceof Error ? err.message : "Unknown error");
+        console.error("❌ signIn() exception:", err);
         return false;
       }
     },
@@ -194,10 +190,5 @@ export const authOptions: AuthOptions = {
 
 const handler = NextAuth(authOptions);
 
-export const GET = async (req: Request, ctx: any) => {
-  return await handler(req, ctx);
-};
-
-export const POST = async (req: Request, ctx: any) => {
-  return await handler(req, ctx);
-};
+export const GET = handler;
+export const POST = handler;
