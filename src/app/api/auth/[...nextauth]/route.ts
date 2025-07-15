@@ -4,6 +4,7 @@ import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import { supabase, supabaseAdmin } from "@/lib/supabase/client";
+import { uploadAvatarToSupabase } from "@/lib/server/upload-avatar-to-db";
 
 const requiredEnvVars = [
   "GOOGLE_CLIENT_ID",
@@ -147,6 +148,15 @@ export const authOptions: AuthOptions = {
             }
             user.id = existing.id;
           }
+          
+          const uploadedUrl = await uploadAvatarToSupabase(user.image!, user.id);
+
+          await supabaseAdmin
+            .from("users")
+            .update({
+              avatar_url: uploadedUrl,
+            })
+            .eq("id", user.id);
         }
 
         // --- CREDENTIALS LOGIN FLOW ---

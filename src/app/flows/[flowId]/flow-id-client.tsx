@@ -2,12 +2,20 @@
 
 import { Flow } from "@/types/flows";
 import { Moment } from "@/types/moments";
-import BottomControls from "@/components/bottom-controls/bottom-controls";
-import LeftNavbar from "@/components/left-navbar/left-navbar";
 import { Button } from "@/components/ui/button";
 import Icons from "@/components/ui/icons";
 import { useRouter } from "next/navigation";
 import { formatDate } from "@/lib/date-convertors";
+import dynamic from "next/dynamic";
+
+const LeftNavbar = dynamic(
+	() => import("@/components/left-navbar/left-navbar"),
+	{ ssr: false }
+);
+const BottomControls = dynamic(
+	() => import("@/components/bottom-controls/bottom-controls"),
+	{ ssr: false }
+);
 
 export default function FlowIdClient({
 	flow,

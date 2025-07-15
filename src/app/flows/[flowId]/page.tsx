@@ -2,6 +2,8 @@
 import { notFound } from "next/navigation";
 import FlowIdClient from "./flow-id-client";
 import { supabase } from "@/lib/supabase/client";
+import { Suspense } from "react";
+import Loading from "./flow-id-loader";
 
 export default async function FlowPage({
 	params,
@@ -32,9 +34,11 @@ export default async function FlowPage({
 	}
 
 	return (
-		<FlowIdClient
-			flow={flow}
-			moments={moments ?? []}
-		/>
+		<Suspense fallback={<Loading />}>
+			<FlowIdClient
+				flow={flow}
+				moments={moments ?? []}
+			/>
+		</Suspense>
 	);
 }
