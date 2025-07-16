@@ -157,7 +157,10 @@ const Flows = () => {
 								</div>
 							</div>
 							{error && (
-								<div aria-live='polite' className='text-destructive'>
+								<div
+									aria-live='polite'
+									className='text-destructive'
+								>
 									{error}
 								</div>
 							)}
@@ -184,7 +187,14 @@ const Flows = () => {
 							</div>
 							<TagsBar tags={tags} />
 							{isLoading ? (
-								<div aria-live='polite'>Loading flows...</div>
+								<div className='grid grid-cols-3 lg:grid-cols-4 gap-5 w-full'>
+									{Array.from({ length: 4 }).map((_, i) => (
+										<div
+											key={i}
+											className='h-80 bg-gray-100 animate-pulse rounded-xl'
+										/>
+									))}
+								</div>
 							) : (
 								<>
 									<div className=''>
@@ -195,7 +205,7 @@ const Flows = () => {
 												</p>
 											</div>
 										) : (
-											<div className='grid grid-cols-4'>
+											<div className='grid grid-cols-3 lg:grid-cols-4 gap-5 w-full'>
 												{flows.map((flow, idx) => (
 													<FlowCard
 														key={`${flow.id}_${idx}`}

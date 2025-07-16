@@ -90,7 +90,17 @@ export default function MomentEditorPage() {
 				<div className='flex gap-5 flex-1 relative overflow-hidden'>
 					<LeftNavbar />
 					<div className='flex flex-col w-full'>
-						<div className='h-10 w-40 bg-gray-200 animate-pulse rounded mb-5' />
+						<div className='flex items-center gap-5 mb-5'>
+							<Button
+								variant='secondary'
+								onClick={() => router.back()}
+								className='flex items-center gap-1 text-gray-500'
+							>
+								<Icons.arrowLeft />
+								<p>Back</p>
+							</Button>
+						<div className='h-8 w-40 bg-gray-100 animate-pulse rounded' />
+						</div>
 						<div className='h-8 w-2/3 bg-gray-100 animate-pulse rounded mb-3' />
 						<div className='flex-1 w-full bg-gray-100 animate-pulse rounded' />
 					</div>
