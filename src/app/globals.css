@@ -179,3 +179,9 @@ body {
 .scrollbar-none {
   scroll-behavior: smooth;
 }
+
+.ProseMirror:focus {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
