@@ -16,6 +16,8 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { supabase } from '@/lib/supabase/client';
+import { useSession } from 'next-auth/react';
 
 type Props = {
     flow: Flow
@@ -25,15 +27,37 @@ type Props = {
 }
 
 const FlowCard = ( { flow, latestFlow, onEdit, onDelete }: Props ) => {
-    const router = useRouter();
+	const router = useRouter();
+	const {data: session} = useSession()
 
     const handleOpenFlow = (flowId: string) => {
         router.push(`/flows/${flowId}`);
 	};
-	
-	const handleOpenNewMoment = (flowId:string) => {
-        router.push(`/flows/${flowId}/moments/new`);
+
+	const handleCreateNewMoment = async (flowId: string) => {
+		try {
+			const { data, error } = await supabase
+				.from("moments")
+				.insert({
+					title: "Untitled Moment",
+					content: "",
+					flow_id: flowId,
+					user_id: session?.user?.id,
+				})
+				.select("id")
+				.single();
+
+			if (error || !data?.id) {
+				console.error("Failed to create moment:", error);
+				return;
+			}
+
+			router.push(`/flows/${flowId}/${data.id}`);
+		} catch (err) {
+			console.error("Moment creation failed:", err);
+		}
 	};
+
 
     return (
 			<div
@@ -81,7 +105,7 @@ const FlowCard = ( { flow, latestFlow, onEdit, onDelete }: Props ) => {
 								type='button'
 								onClick={(e) => {
 									e.stopPropagation();
-									handleOpenNewMoment(flow.id);
+									handleCreateNewMoment(flow.id);
 								}}
 								className='cursor-pointer text-gray-500 h-6 w-6 flex items-center justify-center rounded hover:bg-gray-100 duration-150 active:scale-95'
 							>

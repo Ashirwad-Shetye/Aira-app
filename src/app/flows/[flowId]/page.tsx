@@ -143,7 +143,7 @@ export default function FlowIdPage() {
 									<button
 										key={moment.id}
 										onClick={() =>
-											router.push(`/flows/${flowId}/moments/${moment.id}`)
+											router.push(`/flows/${flowId}/${moment.id}`)
 										}
 										className='border rounded-xl p-4 text-left hover:shadow-md transition bg-white'
 									>
