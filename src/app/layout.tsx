@@ -42,7 +42,7 @@ const roboto = Roboto({
 
 const figtree = Figtree({
 	variable: "--font-figtree",
-	weight: ["300", "900"],
+	weight: ["400", "700"],
 	style: ["normal", "italic"],
 	subsets: ["latin"],
 } );

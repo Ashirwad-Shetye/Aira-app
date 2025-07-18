@@ -11,6 +11,9 @@ import {
 	PiDrop as moment,
 	PiCaretLeft as arrowLeft,
 	PiCheck as check,
+	PiTrash as trash,
+	PiNotePencil as edit,
+	PiPencil as pencil,
 } from "react-icons/pi";
 import { LuWind as flow } from "react-icons/lu";
 import { GoPlus as add } from "react-icons/go";
@@ -30,7 +33,10 @@ const Icons = {
 	add,
 	menuDots,
 	loader,
-	check
+	check,
+	trash,
+	edit,
+	pencil
 };
 
 export default Icons;

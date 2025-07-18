@@ -134,7 +134,7 @@ const FlowCard = ( { flow, latestFlow, onEdit, onDelete }: Props ) => {
 									side='bottom'
 									sideOffset={5}
 								>
-									<p>Menu</p>
+									<p>More</p>
 								</TooltipContent>
 							</Tooltip>
 						</DropdownMenuTrigger>
