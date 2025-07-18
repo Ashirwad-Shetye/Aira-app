@@ -16,7 +16,7 @@ const ProfileMenu = () => {
 
 	if (status === "loading") {
 		return (
-			<div className='w-10 h-10 bg-gray-200 select-none text-gray-200 rounded animate-pulse flex items-center justify-center'>
+			<div className='w-8 h-8 bg-gray-200 select-none text-gray-200 rounded animate-pulse flex items-center justify-center'>
 				.
 			</div>
 		);
@@ -37,20 +37,22 @@ const ProfileMenu = () => {
 
 	return (
 		<DropdownMenu>
-			<DropdownMenuTrigger className='outline-none focus:ring-0 cursor-pointer'>
-				<Avatar className='w-10 h-10 shrink-0 rounded overflow-hidden outline-none focus:ring-0'>
-					<AvatarImage
-						src={userImage}
-						alt={userName}
-						className='rounded overflow-hidden'
-					/>
-					<AvatarFallback className='w-10 h-10 rounded overflow-hidden'>
-						{initials}
-					</AvatarFallback>
-				</Avatar>
+			<DropdownMenuTrigger asChild>
+				<div className='outline-none focus:ring-0 cursor-pointer leading-none p-0 m-0'>
+					<Avatar className='w-8 h-8 shrink-0 rounded overflow-hidden outline-none focus:ring-0 p-0 m-0'>
+						<AvatarImage
+							src={userImage}
+							alt={userName}
+							className='rounded overflow-hidden'
+						/>
+						<AvatarFallback className='w-8 h-8 rounded overflow-hidden'>
+							{initials}
+						</AvatarFallback>
+					</Avatar>
+				</div>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent
-				side='right'
+				side='bottom'
 				align='end'
 				sideOffset={20}
 			>

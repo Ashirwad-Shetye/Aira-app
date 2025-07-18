@@ -1,67 +1,71 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState, useCallback, useRef } from "react"; // Add useRef
+import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import debounce from "lodash/debounce";
-import { Button } from "@/components/ui/button";
-import Icons from "@/components/ui/icons";
-import LeftNavbar from "@/components/left-navbar/left-navbar";
 import BottomControls from "@/components/bottom-controls/bottom-controls";
 import CustomBreadcrumb from "@/components/custom-breadcrumb/custom-breadcrumb";
 import MomentEditor from "@/components/editor/MomentEditor";
+import HeaderNavbar from "@/components/header-navbar/header-navbar";
+import BackButton from "@/components/ui/back-button";
+import AutoResizingTitleTextarea from "@/components/editor/AutoResizingTitleTextarea";
+import ScrollableHeaderLayout from "@/components/layouts/scrollable-header-layout";
 
 export default function MomentEditorPage() {
 	const { flowId, momentId } = useParams();
-	const router = useRouter();
+	const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-	const [flowTitle, setFlowTitle] = useState<string>("");
-	const [title, setTitle] = useState<string>("");
-	const [content, setContent] = useState<string>("");
-	const [isSaving, setIsSaving] = useState<boolean>(false);
-	const [isLoading, setIsLoading] = useState<boolean>(true);
+	const [flowTitle, setFlowTitle] = useState("");
+	const [title, setTitle] = useState("");
+	const [content, setContent] = useState("");
+	const [isSaving, setIsSaving] = useState(false);
+	const [isFlowLoading, setIsFlowLoading] = useState(true);
+	const [isMomentLoading, setIsMomentLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
+	// Fetch flow
 	useEffect(() => {
-		if (
-			!flowId ||
-			!momentId ||
-			typeof flowId !== "string" ||
-			typeof momentId !== "string"
-		)
-			return;
-
-		const fetchData = async () => {
-			setIsLoading(true);
-			setError(null);
-
-			const [
-				{ data: flow, error: flowErr },
-				{ data: moment, error: momentErr },
-			] = await Promise.all([
-				supabase.from("flows").select("title").eq("id", flowId).single(),
-				supabase
-					.from("moments")
-					.select("title, content")
-					.eq("id", momentId)
-					.single(),
-			]);
-
-			if (flowErr || momentErr || !flow || !moment) {
-				console.error("❌ Failed to load:", { flowErr, momentErr });
-				setError("Failed to load moment or flow.");
-				setIsLoading(false);
-				return;
+		if (!flowId || typeof flowId !== "string") return;
+		const fetchFlow = async () => {
+			setIsFlowLoading(true);
+			const { data, error } = await supabase
+				.from("flows")
+				.select("title")
+				.eq("id", flowId)
+				.single();
+			if (error || !data) {
+				console.error("❌ Flow load error:", error);
+				setError("Failed to load flow.");
+			} else {
+				setFlowTitle(data.title);
 			}
-
-			setFlowTitle(flow.title);
-			setTitle(moment.title || "");
-			setContent(moment.content || "");
-			setIsLoading(false);
+			setIsFlowLoading(false);
 		};
+		fetchFlow();
+	}, [flowId]);
 
-		fetchData();
-	}, [flowId, momentId]);
+	// Fetch moment
+	useEffect(() => {
+		if (!momentId || typeof momentId !== "string") return;
+		const fetchMoment = async () => {
+			setIsMomentLoading(true);
+			const { data, error } = await supabase
+				.from("moments")
+				.select("title, content")
+				.eq("id", momentId)
+				.single();
+			if (error || !data) {
+				console.error("❌ Moment load error:", error);
+				setError("Failed to load moment.");
+			} else {
+				setTitle(data.title || "");
+				setContent(data.content || "");
+			}
+			setIsMomentLoading(false);
+		};
+		fetchMoment();
+	}, [momentId]);
 
 	const saveMoment = async (updatedTitle: string, updatedContent: string) => {
 		setIsSaving(true);
@@ -73,7 +77,6 @@ export default function MomentEditorPage() {
 				updated_at: new Date().toISOString(),
 			})
 			.eq("id", momentId);
-
 		if (error) console.error("❌ Failed to save moment:", error);
 		setIsSaving(false);
 	};
@@ -85,30 +88,20 @@ export default function MomentEditorPage() {
 		[momentId]
 	);
 
-	if (isLoading) {
-		return (
-			<div className='p-5 flex flex-col overflow-hidden relative w-full flex-1'>
-				<div className='flex gap-5 flex-1 relative overflow-hidden'>
-					<LeftNavbar />
-					<div className='flex flex-col w-full'>
-						<div className='flex items-center gap-5 mb-5'>
-							<Button
-								variant='secondary'
-								onClick={() => router.back()}
-								className='flex items-center gap-1 text-gray-500'
-							>
-								<Icons.arrowLeft />
-								<p>Back</p>
-							</Button>
-						<div className='h-8 w-40 bg-gray-100 animate-pulse rounded' />
-						</div>
-						<div className='h-8 w-2/3 bg-gray-100 animate-pulse rounded mb-3' />
-						<div className='flex-1 w-full bg-gray-100 animate-pulse rounded' />
-					</div>
-				</div>
-			</div>
-		);
-	}
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			const isMac = navigator.platform.toUpperCase().includes("MAC");
+			if (
+				(isMac && e.metaKey && e.key === "s") ||
+				(!isMac && e.ctrlKey && e.key === "s")
+			) {
+				e.preventDefault();
+				saveMoment(title, content);
+			}
+		};
+		document.addEventListener("keydown", handleKeyDown);
+		return () => document.removeEventListener("keydown", handleKeyDown);
+	}, [title, content, momentId]);
 
 	if (error) {
 		return (
@@ -119,40 +112,42 @@ export default function MomentEditorPage() {
 	}
 
 	return (
-		<div className='p-5 flex flex-col overflow-hidden relative w-full flex-1 min-h-0'>
-			<div className='flex gap-5 flex-1 relative min-h-0'>
-				<LeftNavbar />
-				<div className='flex flex-col overflow-hidden relative w-full min-h-0'>
-					<div className='flex-1 flex flex-col gap-10 relative min-h-0'>
-						<div className='flex items-center gap-5'>
-							<Button
-								variant='secondary'
-								onClick={() => router.back()}
-								className='flex items-center gap-1 text-gray-500'
-							>
-								<Icons.arrowLeft />
-								<p>Back</p>
-							</Button>
-							<CustomBreadcrumb
-								flowId={flowId as string}
-								flowTitle={flowTitle}
-								momentId={momentId as string}
-								momentTitle={title}
-								isLoading={false}
-							/>
-						</div>
-						<div className='flex-1 flex flex-col gap-4 sm:w-full md:w-[70%] max-w-7xl mx-auto overflow-y-auto pr-3 pb-8 min-h-0'>
-							<input
-								type='text'
-								placeholder='Your moment title...'
-								className='text-3xl font-pt-sans w-full focus:outline-none'
+		<ScrollableHeaderLayout
+			header={<HeaderNavbar />}
+			scrollContainerRef={scrollContainerRef}
+		>
+			<div
+				ref={scrollContainerRef}
+				className='flex-1 flex flex-col gap-10 pb-10 relative min-h-0 overflow-y-auto pt-5'
+			>
+				<div className='px-5 flex items-center gap-5 relative overflow-hidden min-w-0'>
+					<BackButton />
+					<CustomBreadcrumb
+						flowId={flowId as string}
+						flowTitle={flowTitle}
+						momentId={momentId as string}
+						momentTitle={title}
+						isLoading={isFlowLoading || isMomentLoading}
+					/>
+				</div>
+				<div className='flex-1 flex flex-col sm:w-full md:w-[70%] max-w-7xl mx-auto min-h-0 px-5'>
+					{isMomentLoading ? (
+						<>
+							<div className='h-10 w-2/3 bg-gray-100 rounded mb-4 animate-pulse' />
+							<div className='flex-1 bg-gray-100 rounded animate-pulse' />
+						</>
+					) : (
+						<>
+							<AutoResizingTitleTextarea
 								value={title}
-								onChange={(e) => {
-									setTitle(e.target.value);
-									debouncedSave(e.target.value, content);
+								onChange={(val) => {
+									setTitle(val);
+									debouncedSave(val, content);
 								}}
+								placeholder='Your moment title...'
+								maxLength={300}
 							/>
-							<div className='flex-1 flex flex-col overflow-hidden relative min-h-0'>
+							<div className='flex-1 flex flex-col relative min-h-0'>
 								<MomentEditor
 									initialContent={content}
 									onChange={(html) => {
@@ -161,14 +156,14 @@ export default function MomentEditorPage() {
 									}}
 								/>
 							</div>
-						</div>
-					</div>
-					<BottomControls
-						status={true}
-						isSaving={isSaving}
-					/>
+						</>
+					)}
 				</div>
 			</div>
-		</div>
+			<BottomControls
+				status={true}
+				isSaving={isSaving}
+			/>
+		</ScrollableHeaderLayout>
 	);
 }

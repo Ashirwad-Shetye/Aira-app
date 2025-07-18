@@ -1,5 +1,5 @@
 import "./globals.css";
-import { Geist, Geist_Mono, PT_Sans, Cabin, Epilogue } from "next/font/google";
+import { Geist, Geist_Mono, PT_Sans, Cabin, Epilogue, Roboto, Manrope, Figtree } from "next/font/google";
 import { Providers } from "@/providers";
 
 const geistSans = Geist({
@@ -28,8 +28,29 @@ const cabin = Cabin({
 
 const epilogue = Epilogue({
 	variable: "--font-epilogue",
-	weight: ["400", "700"],
+	weight: ["100", "900"],
 	style: ["normal", "italic"],
+	subsets: ["latin"],
+} );
+
+const roboto = Roboto({
+	variable: "--font-roboto",
+	weight: ["100", "900"],
+	style: ["normal", "italic"],
+	subsets: ["latin"],
+} );
+
+const figtree = Figtree({
+	variable: "--font-figtree",
+	weight: ["300", "900"],
+	style: ["normal", "italic"],
+	subsets: ["latin"],
+} );
+
+const manrope = Manrope({
+	variable: "--font-manrope",
+	weight: ["400", "700"],
+	style: ["normal"],
 	subsets: ["latin"],
 });
 
@@ -46,7 +67,7 @@ export default function RootLayout({
 	return (
 		<html lang='en'>
 			<body
-				className={`${geistSans.variable} ${geistMono.variable} ${ptSans.variable} ${cabin.variable} ${epilogue.variable} bg-[#F5FAF8] antialiased h-screen w-screen flex flex-col relative`}
+				className={`${geistSans.variable} ${manrope.variable} ${geistMono.variable} ${ptSans.variable} ${cabin.variable} ${epilogue.variable} ${roboto.variable} ${figtree.variable} bg-[#F5FAF8] antialiased h-screen w-screen flex flex-col relative`}
 			>
 				<Providers>{children}</Providers>
 			</body>

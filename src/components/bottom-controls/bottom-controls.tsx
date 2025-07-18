@@ -14,7 +14,7 @@ const BottomControls = ( {
 	isSaving
 }: Props) => {
 	return (
-		<div className='w-full py-1 px-2 flex justify-end items-center gap-5 backdrop-blur-lg absolute bottom-0'>
+		<div className='w-full py-1 px-2 flex justify-end items-center gap-5 absolute bottom-0 bg-gradient-to-b from-transparent via-white/80 to-white'>
 			{status && (
 				<div className='text-sm flex items-center gap-1 text-gray-500'>
 					{isSaving ? (
