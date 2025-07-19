@@ -7,7 +7,7 @@ import { Toaster } from "sonner";
 export function Providers({ children }: { children: ReactNode }) {
 	return (
 		<SessionProvider>
-			<Toaster />
+			<Toaster position="top-center"/>
 			{children}
 		</SessionProvider>
 	);

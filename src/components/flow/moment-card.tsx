@@ -1,50 +1,104 @@
-"use client"
+"use client";
 
-import { formatDate } from '@/lib/date-convertors';
-import { Flow } from '@/types/flows';
-import { Moment } from '@/types/moments';
-import { useRouter } from 'next/navigation';
-import React from 'react'
-import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
-import Icons from '../ui/icons';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import clsx from "clsx";
+
+import { formatDate } from "@/lib/date-convertors";
+import { Flow } from "@/types/flows";
+import { Moment } from "@/types/moments";
+import Icons from "../ui/icons";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 
 type Props = {
-    moment: Moment
-    flow: Flow | null
-}
+	moment: Moment;
+	flow: Flow | null;
+	isNew?: boolean;
+	isDeleting?: boolean;
+	onRename?: (moment: Moment) => void;
+	onDuplicate?: (moment: Moment) => void;
+	onDelete?: (moment: Moment) => void;
+};
 
-const MomentCard = ( {
-    moment,
-    flow
-}: Props ) => {
-    const flowId = flow?.id
-    const router = useRouter();
+const MomentCard = ({
+	moment,
+	flow,
+	isNew = false,
+	isDeleting = false,
+	onRename,
+	onDuplicate,
+	onDelete,
+}: Props) => {
+	const router = useRouter();
+	const flowId = flow?.id;
 
-    const handleOpenMoment = (momentId: string) => {
-        router.push(`/flows/${flowId}/${momentId}`);
-    };
-    
-    return (
-			<div
-				key={moment.id}
-				onClick={() => router.push(`/flows/${flowId}/${moment.id}`)}
-				className='border rounded-xl p-4 text-left hover:shadow transition bg-white'
-			>
-				<p className='text-sm text-gray-500 mb-1'>
-					{formatDate(moment.created_at)}
-				</p>
-				<h2 className='text-md font-semibold'>
+	const [animateIn, setAnimateIn] = useState(false);
+	const [animateOut, setAnimateOut] = useState(false);
+
+	// Animate in on mount if it's a new moment
+	useEffect(() => {
+		if (isNew) {
+			requestAnimationFrame(() => setAnimateIn(true));
+		}
+	}, [isNew]);
+
+	// Animate out on delete
+	useEffect(() => {
+		if (isDeleting) {
+			setAnimateOut(true);
+		}
+	}, [isDeleting]);
+
+	const handleOpenMoment = (momentId: string) => {
+		router.push(`/flows/${flowId}/${momentId}`);
+	};
+
+	return (
+		<div
+			onClick={() => handleOpenMoment(moment.id)}
+			className={clsx(
+				"border rounded-xl p-4 bg-white flex flex-col hover:shadow justify-between transition-all duration-300 ease-in-out transform",
+				{
+					"opacity-0 scale-95": (isNew && !animateIn) || animateOut,
+					"opacity-100 scale-100": isNew && animateIn,
+				}
+			)}
+		>
+			{/* Header */}
+			<div className='flex flex-col gap-1 relative'>
+				<p className='text-sm text-gray-500'>{formatDate(moment.created_at)}</p>
+				<h2 className='text-md font-semibold text-wrap line-clamp-3 truncate'>
 					{moment.title || "Untitled Moment"}
 				</h2>
-				<div className='flex items-center gap-2 justify-end'>
+				{moment.snippet && (
+					<p className='text-sm text-muted-foreground line-clamp-3 mt-1'>
+						{moment.snippet}
+					</p>
+				)}
+			</div>
+
+			{/* Footer */}
+			<div className='flex items-center gap-2 justify-between mt-3'>
+				{moment.updated_at && (
+					<p className='text-xs text-gray-400 truncate'>
+						Last edited: {formatDate(moment.updated_at)}
+					</p>
+				)}
+
+				<div className='flex items-center gap-2'>
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<button
 								type='button'
 								onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleOpenMoment(moment.id)
+									e.stopPropagation();
+									handleOpenMoment(moment.id);
 								}}
 								className='cursor-pointer text-gray-500 h-6 w-6 flex items-center justify-center rounded hover:bg-gray-100 duration-150 active:scale-95'
 							>
@@ -58,6 +112,7 @@ const MomentCard = ( {
 							<p>Edit</p>
 						</TooltipContent>
 					</Tooltip>
+
 					<DropdownMenu>
 						<DropdownMenuTrigger className='outline-none focus:ring-0 cursor-pointer'>
 							<Tooltip>
@@ -77,6 +132,7 @@ const MomentCard = ( {
 								</TooltipContent>
 							</Tooltip>
 						</DropdownMenuTrigger>
+
 						<DropdownMenuContent
 							side='top'
 							align='end'
@@ -86,14 +142,25 @@ const MomentCard = ( {
 								className='cursor-pointer'
 								onClick={(e) => {
 									e.stopPropagation();
+									onRename?.(moment);
 								}}
 							>
-								Edit
+								Rename
 							</DropdownMenuItem>
 							<DropdownMenuItem
 								className='cursor-pointer'
 								onClick={(e) => {
 									e.stopPropagation();
+									onDuplicate?.(moment);
+								}}
+							>
+								Duplicate
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								className='cursor-pointer text-red-600'
+								onClick={(e) => {
+									e.stopPropagation();
+									onDelete?.(moment);
 								}}
 							>
 								Delete
@@ -102,7 +169,8 @@ const MomentCard = ( {
 					</DropdownMenu>
 				</div>
 			</div>
-		);
-}
+		</div>
+	);
+};
 
-export default MomentCard
+export default MomentCard;

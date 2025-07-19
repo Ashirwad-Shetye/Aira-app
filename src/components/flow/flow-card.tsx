@@ -41,6 +41,7 @@ const FlowCard = ( { flow, latestFlow, onEdit, onDelete }: Props ) => {
 				.insert({
 					title: "Untitled Moment",
 					content: "",
+					snippet: "",
 					flow_id: flowId,
 					user_id: session?.user?.id,
 				})

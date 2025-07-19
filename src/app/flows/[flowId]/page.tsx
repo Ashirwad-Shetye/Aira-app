@@ -8,12 +8,15 @@ import { Flow } from "@/types/flows";
 import { Moment } from "@/types/moments";
 import { Button } from "@/components/ui/button";
 import Icons from "@/components/ui/icons";
-import { formatDate } from "@/lib/date-convertors";
 import BottomControls from "@/components/bottom-controls/bottom-controls";
 import HeaderNavbar from "@/components/header-navbar/header-navbar";
 import ScrollableHeaderLayout from "@/components/layouts/scrollable-header-layout";
 import CustomBreadcrumb from "@/components/custom-breadcrumb/custom-breadcrumb";
 import MomentCard from "@/components/flow/moment-card";
+import { RenameMomentDialog } from "@/components/moment-dialogs/rename-moment-dialog";
+import { ConfirmDialog } from "@/components/custom-alert-dialog/confirm-dialog";
+import { toast } from "sonner";
+import { generateSnippet } from "@/lib/text-utils";
 
 export default function FlowIdPage() {
 	const { flowId } = useParams();
@@ -27,7 +30,11 @@ export default function FlowIdPage() {
 	const [error, setError] = useState<string | null>(null);
 	const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-	// Fetch flow metadata
+	const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+	const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+	const [selectedMoment, setSelectedMoment] = useState<Moment | null>(null);
+	const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+
 	useEffect(() => {
 		if (!flowId || typeof flowId !== "string") return;
 		if (status !== "authenticated" || !session?.user?.id) return;
@@ -40,12 +47,12 @@ export default function FlowIdPage() {
 					.select("id, title, bio, created_at, user_id")
 					.eq("id", flowId)
 					.single();
-
 				if (error || !data) throw error || new Error("Flow not found");
 				setFlow(data);
 			} catch (err: any) {
-				console.error("❌ Error loading flow:", err.message);
+				console.error("\u274C Error loading flow:", err.message);
 				setError("Failed to load flow.");
+				toast.error("Failed to load flow.");
 			} finally {
 				setFlowLoading(false);
 			}
@@ -54,24 +61,23 @@ export default function FlowIdPage() {
 		fetchFlow();
 	}, [flowId, status, session?.user?.id]);
 
-	// Fetch moments (after flow is available)
 	useEffect(() => {
-		if (!flowId || typeof flowId !== "string") return;
-		if (!flow) return;
+		if (!flowId || typeof flowId !== "string" || !flow) return;
 
 		const fetchMoments = async () => {
 			setMomentsLoading(true);
 			try {
 				const { data, error } = await supabase
 					.from("moments")
-					.select("id, title, created_at")
+					.select("id, flow_id, title, created_at, updated_at, snippet")
 					.eq("flow_id", flowId)
 					.order("created_at", { ascending: false });
 
 				if (error) throw error;
 				setMoments(data ?? []);
 			} catch (err: any) {
-				console.error("❌ Error loading moments:", err.message);
+				console.error("\u274C Error loading moments:", err.message);
+				toast.error("Failed to load moments.");
 			} finally {
 				setMomentsLoading(false);
 			}
@@ -80,7 +86,110 @@ export default function FlowIdPage() {
 		fetchMoments();
 	}, [flowId, flow]);
 
-	// Handle initial error
+	const handleRename = (moment: Moment) => {
+		setSelectedMoment(moment);
+		setRenameDialogOpen(true);
+	};
+
+	const handleSaveRename = async (data: { id: string; title: string }) => {
+		const { error } = await supabase
+			.from("moments")
+			.update({ title: data.title, updated_at: new Date().toISOString() })
+			.eq("id", data.id);
+		if (!error) {
+			setMoments((prev) =>
+				prev.map((m) =>
+					m.id === data.id
+						? { ...m, title: data.title, updated_at: new Date().toISOString() }
+						: m
+				)
+			);
+			toast.success("Moment renamed successfully.");
+		} else {
+			toast.error("Failed to rename moment.");
+		}
+		setRenameDialogOpen(false);
+	};
+
+	const handleDelete = (moment: Moment) => {
+		setSelectedMoment(moment);
+		setConfirmDialogOpen(true);
+	};
+
+	const confirmDelete = async () => {
+		if (!selectedMoment) return;
+
+		setDeletingIds((prev) => new Set(prev).add(selectedMoment.id));
+
+		setTimeout(async () => {
+			const { error } = await supabase
+				.from("moments")
+				.delete()
+				.eq("id", selectedMoment.id);
+
+			if (!error) {
+				setMoments((prev) => prev.filter((m) => m.id !== selectedMoment.id));
+				toast.success("Successfully deleted moment.");
+			} else {
+				toast.error("Failed to delete moment.");
+			}
+
+			setDeletingIds((prev) => {
+				const next = new Set(prev);
+				next.delete(selectedMoment.id);
+				return next;
+			});
+
+			setConfirmDialogOpen(false);
+			setSelectedMoment(null);
+		}, 250);
+	};
+
+	const handleDuplicate = async (moment: Moment) => {
+		if (!flowId || typeof flowId !== "string") return;
+
+		const { data: originalMoment, error: fetchError } = await supabase
+			.from("moments")
+			.select("id, title, content")
+			.eq("id", moment.id)
+			.single();
+
+		if (fetchError || !originalMoment) {
+			console.error("❌ Failed to fetch moment content:", fetchError?.message);
+			toast.error("Failed to duplicate moment.");
+			return;
+		}
+
+		const duplicateTitle =
+			(originalMoment.title || "Untitled Moment") + " (copy)";
+		const duplicateContent = originalMoment.content || "";
+		const duplicateSnippet = generateSnippet(duplicateContent);
+
+		const { data: newMoment, error: insertError } = await supabase
+			.from("moments")
+			.insert([
+				{
+					title: duplicateTitle,
+					content: duplicateContent,
+					snippet: duplicateSnippet,
+					flow_id: flowId,
+					created_at: new Date().toISOString(),
+					updated_at: new Date().toISOString(),
+				},
+			])
+			.select()
+			.single();
+
+		if (insertError || !newMoment) {
+			console.error("❌ Failed to duplicate moment:", insertError?.message);
+			toast.error("Failed to duplicate moment.");
+			return;
+		}
+
+		setMoments((prev) => [newMoment, ...prev]);
+		toast.success("Moment duplicated successfully.");
+	};
+
 	if (error) {
 		return (
 			<div className='p-5 flex flex-col items-center justify-center text-red-500 text-center'>
@@ -98,7 +207,6 @@ export default function FlowIdPage() {
 				ref={scrollContainerRef}
 				className='flex-1 flex flex-col gap-10 pb-10 relative min-h-0 overflow-y-auto p-5'
 			>
-				{/* Flow header */}
 				<div className='flex items-center gap-5'>
 					<Button
 						variant='secondary'
@@ -128,15 +236,14 @@ export default function FlowIdPage() {
 									{flow?.title || "Untitled Flow"}
 								</h1>
 								{flow?.bio ? (
-									<p className='font-figtree'>{flow?.bio || ""}</p>
+									<p className='font-figtree'>{flow.bio}</p>
 								) : (
-									<p className=''>Add bio</p>
+									<p className='text-muted-foreground'>Add bio</p>
 								)}
 							</>
 						)}
 					</div>
 
-					{/* Search bar - Sticky when scrolled to its position */}
 					<div className='sticky -top-5 z-40 w-full'>
 						<div className='h-6 w-full bg-white' />
 						<div className='w-full bg-white'>
@@ -152,18 +259,14 @@ export default function FlowIdPage() {
 						<div className='h-6 w-full bg-gradient-to-t from-transparent via-white/90 to-white' />
 					</div>
 
-					{/* Moments grid */}
 					{momentsLoading ? (
-						<div className='flex flex-col gap-3'>
-							<h2>Moments</h2>
-							<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2'>
-								{Array.from({ length: 6 }).map((_, i) => (
-									<div
-										key={i}
-										className='h-32 bg-gray-100 animate-pulse rounded-xl'
-									/>
-								))}
-							</div>
+						<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2'>
+							{Array.from({ length: 6 }).map((_, i) => (
+								<div
+									key={i}
+									className='h-32 bg-gray-100 animate-pulse rounded-xl'
+								/>
+							))}
 						</div>
 					) : moments.length === 0 ? (
 						<p className='text-muted-foreground mt-4'>
@@ -176,13 +279,34 @@ export default function FlowIdPage() {
 									key={moment.id}
 									moment={moment}
 									flow={flow}
+									onRename={handleRename}
+									onDelete={handleDelete}
+									onDuplicate={handleDuplicate}
+									isDeleting={deletingIds.has(moment.id)}
+									isNew={moment.id.startsWith("temp_")}
 								/>
 							))}
 						</div>
 					)}
 				</div>
 			</div>
+
 			<BottomControls />
+
+			<RenameMomentDialog
+				moment={selectedMoment!}
+				open={renameDialogOpen}
+				onOpenChange={setRenameDialogOpen}
+				onSave={handleSaveRename}
+			/>
+			<ConfirmDialog
+				open={confirmDialogOpen}
+				onOpenChange={setConfirmDialogOpen}
+				title='Delete this moment?'
+				description='This action cannot be undone.'
+				confirmText='Delete'
+				onConfirm={confirmDelete}
+			/>
 		</ScrollableHeaderLayout>
 	);
 }

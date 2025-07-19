@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react"; // Add useRef
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import debounce from "lodash/debounce";
@@ -11,6 +11,7 @@ import HeaderNavbar from "@/components/header-navbar/header-navbar";
 import BackButton from "@/components/ui/back-button";
 import AutoResizingTitleTextarea from "@/components/editor/AutoResizingTitleTextarea";
 import ScrollableHeaderLayout from "@/components/layouts/scrollable-header-layout";
+import { generateSnippet } from "@/lib/text-utils";
 
 export default function MomentEditorPage() {
 	const { flowId, momentId } = useParams();
@@ -68,12 +69,14 @@ export default function MomentEditorPage() {
 	}, [momentId]);
 
 	const saveMoment = async (updatedTitle: string, updatedContent: string) => {
-		setIsSaving(true);
+		setIsSaving( true );
+		const cleanSnippet = generateSnippet(updatedContent)
 		const { error } = await supabase
 			.from("moments")
 			.update({
 				title: updatedTitle,
 				content: updatedContent,
+				snippet: cleanSnippet,
 				updated_at: new Date().toISOString(),
 			})
 			.eq("id", momentId);
