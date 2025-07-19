@@ -1,7 +1,6 @@
-// src/app/flows/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import BottomControls from "@/components/bottom-controls/bottom-controls";
 import LeftNavbar from "@/components/left-navbar/left-navbar";
 import { NewFlowDialog } from "@/components/new-flow-dialog/new-flow-dialog";
@@ -10,8 +9,9 @@ import Icons from "@/components/ui/icons";
 import { useSession } from "next-auth/react";
 import { Flow } from "@/types/flows";
 import { supabase } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
 import FlowCard from "@/components/flow/flow-card";
+import ScrollableHeaderLayout from "@/components/layouts/scrollable-header-layout";
+import HeaderNavbar from "@/components/header-navbar/header-navbar";
 
 const Flows = () => {
 	const [flows, setFlows] = useState<Flow[]>([]);
@@ -21,7 +21,7 @@ const Flows = () => {
 	const [hasFetched, setHasFetched] = useState(false);
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [editFlow, setEditFlow] = useState<Flow | null>(null);
-	const router = useRouter();
+	const scrollContainerRef = useRef<HTMLDivElement>(null);
 
 	const tags = [
 		"mindfulness",
@@ -57,11 +57,7 @@ const Flows = () => {
 	];
 
 	useEffect(() => {
-		if (
-			hasFetched ||
-			status !== "authenticated" ||
-			!session?.user?.id
-		) {
+		if (hasFetched || status !== "authenticated" || !session?.user?.id) {
 			return;
 		}
 
@@ -105,20 +101,21 @@ const Flows = () => {
 	async function handleDeleteFlow(flowId: string) {
 		setIsLoading(true);
 		setError(null);
-		const { error } = await supabase
-			.from("flows")
-			.delete()
-			.eq("id", flowId);
+		const { error } = await supabase.from("flows").delete().eq("id", flowId);
 		if (error) {
 			setError(error.message);
 			setIsLoading(false);
 			return;
 		}
-		setFlows((prev) => prev.filter(f => f.id !== flowId));
+		setFlows((prev) => prev.filter((f) => f.id !== flowId));
 		setIsLoading(false);
 	}
 
-	async function handleSaveFlow(data: { id?: string; title: string; bio?: string }) {
+	async function handleSaveFlow(data: {
+		id?: string;
+		title: string;
+		bio?: string;
+	}) {
 		if (!data.id) return;
 		setIsLoading(true);
 		setError(null);
@@ -131,101 +128,110 @@ const Flows = () => {
 			setIsLoading(false);
 			return;
 		}
-		setFlows((prev) => prev.map(f => f.id === data.id ? { ...f, title: data.title, bio: data.bio } : f));
+		setFlows((prev) =>
+			prev.map((f) =>
+				f.id === data.id ? { ...f, title: data.title, bio: data.bio } : f
+			)
+		);
 		setDialogOpen(false);
 		setEditFlow(null);
 		setIsLoading(false);
 	}
 
 	return (
-		<div className='p-5 flex flex-col overflow-hidden relative w-full flex-1'>
-			<div className='flex gap-5 flex-1 relative'>
-				<LeftNavbar />
-				<div className='flex flex-col overflow-hidden relative w-full'>
-					<div className='flex-1 flex flex-col gap-5 relative'>
-						<h1 className='font-pt-sans text-2xl'>Your Flows</h1>
-						<div className='flex-1 flex flex-col gap-5 relative overflow-hidden'>
-							<div>
+		<ScrollableHeaderLayout
+			header={<HeaderNavbar />}
+			scrollContainerRef={scrollContainerRef}
+		>
+			<div
+				ref={scrollContainerRef}
+				className='flex-1 flex flex-col gap-10 pb-10 min-h-screen overflow-y-auto p-5'
+			>
+				<div className='flex flex-col sm:w-full md:w-[70%] max-w-7xl mx-auto min-h-0 px-5'>
+					<h1 className='font-pt-sans text-2xl'>Your Flows</h1>
+					<div className='flex-1 flex flex-col'>
+						<div className='sticky -top-5 z-40 w-full'>
+							<div className='h-6 w-full bg-white' />
+							<div className='w-full bg-white'>
 								<div className='flex items-center bg-white rounded-full gap-2 border w-[40%] min-w-80 px-3 py-1.5'>
-									<Icons.search aria-hidden='true' />
+									<Icons.search />
 									<input
 										type='text'
-										placeholder='Search your last flows'
+										placeholder='Search your moments'
 										className='text-gray-800 w-full font-cabin focus:ring-0 outline-none'
-										aria-label='Search flows'
 									/>
 								</div>
 							</div>
-							{error && (
-								<div
-									aria-live='polite'
-									className='text-destructive'
-								>
-									{error}
-								</div>
-							)}
-							<div className='flex gap-5'>
-								<NewFlowDialog
-									open={dialogOpen}
-									onOpenChange={(open) => {
-										setDialogOpen(open);
-										if (!open) setEditFlow(null);
-									}}
-									flow={editFlow ?? undefined}
-									onSave={editFlow ? handleSaveFlow : undefined}
-								/>
-								<button
-									type='button'
-									className='px-10 h-20 group cursor-pointer select-none font-pt-sans text-lg font-semibold rounded-lg text-white bg-gradient-to-br from-[#E8F2D9] via-[#b7da81] to-[#E8F2D9] flex items-center justify-center'
-									aria-label='Create new moment in flow'
-								>
-									<div className='group-hover:scale-105 gap-2 duration-200 group-active:scale-95 flex items-center justify-center'>
-										<Icons.moment aria-hidden='true' />
-										<h1>New moment in flow</h1>
-									</div>
-								</button>
-							</div>
-							<TagsBar tags={tags} />
-							{isLoading ? (
-								<div className='grid grid-cols-3 lg:grid-cols-4 gap-5 w-full'>
-									{Array.from({ length: 4 }).map((_, i) => (
-										<div
-											key={i}
-											className='h-80 bg-gray-100 animate-pulse rounded-xl'
-										/>
-									))}
-								</div>
-							) : (
-								<>
-									<div className=''>
-										{flows.length === 0 ? (
-											<div className=''>
-												<p aria-live='polite'>
-													No flows found. Create one to get started!
-												</p>
-											</div>
-										) : (
-											<div className='grid grid-cols-3 lg:grid-cols-4 gap-5 w-full'>
-												{flows.map((flow, idx) => (
-													<FlowCard
-														key={`${flow.id}_${idx}`}
-														flow={flow}
-														latestFlow={flow.id === flows[0].id}
-														onEdit={handleEditFlow}
-														onDelete={handleDeleteFlow}
-													/>
-												))}
-											</div>
-										)}
-									</div>
-								</>
-							)}
+							<div className='h-6 w-full bg-white' />
 						</div>
-						<BottomControls />
+						{error && (
+							<div
+								aria-live='polite'
+								className='text-destructive'
+							>
+								{error}
+							</div>
+						)}
+						<div className='flex gap-5 pb-5'>
+							<NewFlowDialog
+								open={dialogOpen}
+								onOpenChange={(open) => {
+									setDialogOpen(open);
+									if (!open) setEditFlow(null);
+								}}
+								flow={editFlow ?? undefined}
+								onSave={editFlow ? handleSaveFlow : undefined}
+							/>
+							<button
+								type='button'
+								className='px-10 h-20 group cursor-pointer select-none font-pt-sans text-lg font-semibold rounded-lg text-white bg-gradient-to-br from-[#E8F2D9] via-[#b7da81] to-[#E8F2D9] flex items-center justify-center'
+								aria-label='Create new moment in flow'
+							>
+								<div className='group-hover:scale-105 gap-2 duration-200 group-active:scale-95 flex items-center justify-center'>
+									<Icons.moment aria-hidden='true' />
+									<h1>New moment in flow</h1>
+								</div>
+							</button>
+						</div>
+						<div className='sticky top-14 z-40 w-full'>
+							<TagsBar tags={tags} />
+							<div className='h-6 w-full bg-gradient-to-t from-transparent via-white/90 to-white' />
+						</div>
+						{isLoading ? (
+							<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-10'>
+								{Array.from({ length: 4 }).map((_, i) => (
+									<div
+										key={i}
+										className='h-80 bg-gray-100 animate-pulse rounded-xl'
+									/>
+								))}
+							</div>
+						) : (
+							<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-10'>
+								{flows.length === 0 ? (
+									<p aria-live='polite'>
+										No flows found. Create one to get started!
+									</p>
+								) : (
+									flows.map((flow, idx) => (
+										<FlowCard
+											key={`${flow.id}_${idx}`}
+											flow={flow}
+											latestFlow={flow.id === flows[0].id}
+											onEdit={handleEditFlow}
+											onDelete={handleDeleteFlow}
+										/>
+									))
+								)}
+							</div>
+						)}
+						{/* Optional: Add padding to ensure content height for testing */}
+						<div className='pb-[1000px]' />
 					</div>
 				</div>
 			</div>
-		</div>
+			<BottomControls />
+		</ScrollableHeaderLayout>
 	);
 };
 

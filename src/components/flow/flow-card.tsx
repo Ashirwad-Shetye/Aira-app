@@ -63,7 +63,7 @@ const FlowCard = ( { flow, latestFlow, onEdit, onDelete }: Props ) => {
     return (
 			<div
 				onClick={() => handleOpenFlow(flow.id)}
-				className='p-5 border rounded-xl flex flex-col gap-5 bg-white hover:shadow duration-150'
+				className='border rounded-xl p-4 bg-white flex flex-col hover:shadow justify-between transition-all duration-300 ease-in-out transform'
 			>
 				<div className='flex items-center gap-3'>
 					{latestFlow && (
@@ -73,10 +73,14 @@ const FlowCard = ( { flow, latestFlow, onEdit, onDelete }: Props ) => {
 					)}
 					<p className='text-gray-500'>{formatDate(flow.created_at)}</p>
 				</div>
-				<div className='flex flex-col gap-2'>
-					<h1 className='font-epilogue text-[1.10rem]'>{flow.title}</h1>
+				<div className='flex flex-col gap-1 pt-2 relative'>
+					<h1 className='text-md font-semibold text-wrap line-clamp-3 truncate'>
+						{flow.title}
+					</h1>
 					{flow.bio && (
-						<p className='font-epilogue text-sm text-gray-500'>{flow.bio}</p>
+						<p className='text-sm text-muted-foreground line-clamp-3 mt-1'>
+							{flow.bio}
+						</p>
 					)}
 				</div>
 				<div className='flex items-center gap-2 justify-end'>

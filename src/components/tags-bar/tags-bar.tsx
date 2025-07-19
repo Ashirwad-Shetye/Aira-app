@@ -3,15 +3,16 @@
 import React from 'react'
 
 type Props = {
-    tags: string[]
+	tags: string[],
+	className?: string
 }
 
-const TagsBar = ({tags}: Props) => {
+const TagsBar = ({tags, className}: Props) => {
   return (
-		<div className='flex gap-2 flex-nowrap'>
+		<div className='flex gap-2 flex-nowrap bg-white w-full'>
 			<button
 				type='button'
-				className='text-sm shrink-0 text-nowrap hover:bg-gray-200 duration-150 cursor-pointer select-none font-cabin text-gray-700 bg-gray-100 px-3 py-1 rounded-full'
+				className={`${className} text-sm shrink-0 text-nowrap hover:bg-gray-200 duration-150 cursor-pointer select-none font-cabin text-gray-700 bg-gray-100 px-3 py-1 rounded-full`}
 			>
 				<p># All</p>
 			</button>
