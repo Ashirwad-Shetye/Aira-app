@@ -19,8 +19,10 @@ const Greetings = ({userName, align}: Props) => {
       greet = 'Good morning';
     } else if (hours < 18) {
       greet = 'Good afternoon';
-    } else {
+    } else if (hours < 22) {
       greet = 'Good evening';
+    } else {
+      greet = 'Good night';
     }
     setGreeting(greet);
     setFormattedDate(
