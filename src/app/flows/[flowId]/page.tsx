@@ -223,7 +223,7 @@ export default function FlowIdPage() {
 					/>
 				</div>
 
-				<div className='flex-1 flex flex-col sm:w-full md:w-[70%] max-w-7xl mx-auto min-h-0 px-5 relative'>
+				<div className='flex-1 flex flex-col sm:w-full md:w-[70%] max-w-7xl mx-auto min-h-0 relative'>
 					<div className='flex flex-col gap-3'>
 						{flowLoading ? (
 							<>
