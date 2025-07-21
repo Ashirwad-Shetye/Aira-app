@@ -12,6 +12,8 @@ import { supabase } from "@/lib/supabase/client";
 import FlowCard from "@/components/flow/flow-card";
 import ScrollableHeaderLayout from "@/components/layouts/scrollable-header-layout";
 import HeaderNavbar from "@/components/header-navbar/header-navbar";
+import { ConfirmDialog } from "@/components/custom-alert-dialog/confirm-dialog";
+import { toast } from "sonner";
 
 const Flows = () => {
 	const [flows, setFlows] = useState<Flow[]>([]);
@@ -22,6 +24,9 @@ const Flows = () => {
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [editFlow, setEditFlow] = useState<Flow | null>(null);
 	const scrollContainerRef = useRef<HTMLDivElement>(null);
+	const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+	const [selectedFlow, setSelectedFlow] = useState<Flow | null>(null);
+	const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
 
 	const tags = [
 		"mindfulness",
@@ -98,18 +103,33 @@ const Flows = () => {
 		setDialogOpen(true);
 	};
 
-	async function handleDeleteFlow(flowId: string) {
-		setIsLoading(true);
-		setError(null);
-		const { error } = await supabase.from("flows").delete().eq("id", flowId);
-		if (error) {
+	const handleDeleteFlow = (flowId: string) => {
+		const flow = flows.find((f) => f.id === flowId);
+		if (!flow) return;
+		setSelectedFlow(flow);
+		setConfirmDialogOpen(true);
+	};
+
+	const confirmDelete = async () => {
+		if (!selectedFlow) return;
+		setDeletingIds((prev) => new Set(prev).add(selectedFlow.id));
+		// Optionally, show a toast here for deleting
+		const { error } = await supabase.from("flows").delete().eq("id", selectedFlow.id);
+		if (!error) {
+			setFlows((prev) => prev.filter((f) => f.id !== selectedFlow.id));
+			toast.success("Flow deleted successfully.");
+		} else {
+			toast.error("Failed to delete flow.");
 			setError(error.message);
-			setIsLoading(false);
-			return;
 		}
-		setFlows((prev) => prev.filter((f) => f.id !== flowId));
-		setIsLoading(false);
-	}
+		setDeletingIds((prev) => {
+			const next = new Set(prev);
+			next.delete(selectedFlow.id);
+			return next;
+		});
+		setConfirmDialogOpen(false);
+		setSelectedFlow(null);
+	};
 
 	async function handleSaveFlow(data: {
 		id?: string;
@@ -181,6 +201,17 @@ const Flows = () => {
 								}}
 								flow={editFlow ?? undefined}
 								onSave={editFlow ? handleSaveFlow : undefined}
+								children={
+									<button
+										type='button'
+										className='px-10 h-20 group cursor-pointer select-none font-pt-sans text-lg font-semibold rounded-lg text-white bg-gradient-to-br from-[#DFEDFF] via-[#B2CEF3] to-[#DFEDFF] flex items-center justify-center'
+									>
+										<div className='group-hover:scale-105 gap-2 duration-200 group-active:scale-95 flex items-center justify-center'>
+											<Icons.flow />
+											<h1>{editFlow ? "Edit flow" : "Start a new flow"}</h1>
+										</div>
+									</button>
+								}
 							/>
 							<button
 								type='button'
@@ -231,6 +262,14 @@ const Flows = () => {
 				</div>
 			</div>
 			<BottomControls />
+			<ConfirmDialog
+				open={confirmDialogOpen}
+				onOpenChange={setConfirmDialogOpen}
+				title='Delete this flow?'
+				description='This action cannot be undone.'
+				confirmText='Delete'
+				onConfirm={confirmDelete}
+			/>
 		</ScrollableHeaderLayout>
 	);
 };

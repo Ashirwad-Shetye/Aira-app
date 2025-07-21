@@ -124,50 +124,81 @@ const FlowCard = ( { flow, latestFlow, onEdit, onDelete }: Props ) => {
 							<p>Add a new moment</p>
 						</TooltipContent>
 					</Tooltip>
-					<DropdownMenu>
-						<DropdownMenuTrigger className='outline-none focus:ring-0 cursor-pointer'>
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<div
-										onClick={(e) => e.stopPropagation()}
-										className='cursor-pointer text-gray-500 h-6 w-6 flex items-center justify-center rounded hover:bg-gray-100 duration-150 active:scale-95'
+					{onEdit && onDelete ? (
+						<DropdownMenu>
+							<DropdownMenuTrigger className='outline-none focus:ring-0 cursor-pointer'>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<div
+											onClick={(e) => e.stopPropagation()}
+											className='cursor-pointer text-gray-500 h-6 w-6 flex items-center justify-center rounded hover:bg-gray-100 duration-150 active:scale-95'
+										>
+											<Icons.menuDots />
+										</div>
+									</TooltipTrigger>
+									<TooltipContent
+										side='bottom'
+										sideOffset={5}
 									>
-										<Icons.menuDots />
-									</div>
-								</TooltipTrigger>
-								<TooltipContent
-									side='bottom'
-									sideOffset={5}
-								>
-									<p>More</p>
-								</TooltipContent>
-							</Tooltip>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent
-							side='top'
-							align='end'
-							sideOffset={5}
-						>
-							<DropdownMenuItem
-								className='cursor-pointer'
-								onClick={(e) => {
-									e.stopPropagation();
-									onEdit && onEdit(flow);
-								}}
+										<p>More</p>
+									</TooltipContent>
+								</Tooltip>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent
+								side='top'
+								align='end'
+								sideOffset={5}
 							>
-								Edit
-							</DropdownMenuItem>
-							<DropdownMenuItem
-								className='cursor-pointer'
-								onClick={(e) => {
-									e.stopPropagation();
-									onDelete && onDelete(flow.id);
-								}}
-							>
-								Delete
-							</DropdownMenuItem>
-						</DropdownMenuContent>
-					</DropdownMenu>
+								{onEdit && (
+									<DropdownMenuItem
+										className='cursor-pointer'
+										onClick={(e) => {
+											e.stopPropagation();
+											onEdit(flow);
+										}}
+									>
+										Edit
+									</DropdownMenuItem>
+								)}
+								{onDelete && (
+									<DropdownMenuItem
+										className='cursor-pointer'
+										onClick={(e) => {
+											e.stopPropagation();
+											onDelete(flow.id);
+										}}
+									>
+										Delete
+									</DropdownMenuItem>
+								)}
+							</DropdownMenuContent>
+						</DropdownMenu>
+					) : (
+						<>
+							{onDelete && (
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<button
+											type='button'
+											onClick={(e) => {
+												e.stopPropagation();
+												onDelete(flow.id);
+											}}
+											className='cursor-pointer text-gray-500 h-6 w-6 flex items-center justify-center rounded hover:bg-gray-100 hover:text-red-400 duration-150 active:scale-95'
+										>
+											<Icons.trash />
+										</button>
+									</TooltipTrigger>
+									<TooltipContent
+										side='bottom'
+										sideOffset={5}
+									>
+										<p>Delete</p>
+									</TooltipContent>
+								</Tooltip>
+							)}
+						</>
+					)}
 				</div>
 			</div>
 		);

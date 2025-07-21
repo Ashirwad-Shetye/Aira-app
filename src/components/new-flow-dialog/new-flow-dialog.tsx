@@ -12,18 +12,19 @@ import {
 } from "@/components/ui/dialog";
 import Icons from "../ui/icons";
 import { Button } from "../ui/button";
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition, useEffect, ReactElement } from "react";
 import { createFlow } from "@/lib/data/create-flow";
 
 export interface NewFlowDialogProps {
   flow?: { id: string; title: string; bio?: string };
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  onSave?: (data: { id?: string; title: string; bio?: string }) => void;
+  onSave?: ( data: { id?: string; title: string; bio?: string } ) => void;
+  children?: ReactElement; // <-- Make children optional
 }
 
 export function NewFlowDialog(props: NewFlowDialogProps = {}) {
-  const { flow, open, onOpenChange, onSave } = props;
+  const { flow, open, onOpenChange, onSave, children } = props;
   const [title, setTitle] = useState<string>(flow?.title || "Untitled Flow");
   const [bio, setBio] = useState<string>(flow?.bio || "");
   const [isPending, startTransition] = useTransition();
@@ -60,15 +61,7 @@ export function NewFlowDialog(props: NewFlowDialogProps = {}) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <button
-          type='button'
-          className='px-10 h-20 group cursor-pointer select-none font-pt-sans text-lg font-semibold rounded-lg text-white bg-gradient-to-br from-[#DFEDFF] via-[#B2CEF3] to-[#DFEDFF] flex items-center justify-center'
-        >
-          <div className='group-hover:scale-105 gap-2 duration-200 group-active:scale-95 flex items-center justify-center'>
-            <Icons.flow />
-            <h1>{flow ? "Edit flow" : "Start a new flow"}</h1>
-          </div>
-        </button>
+        {children}
       </DialogTrigger>
       <DialogContent className='w-[50rem]' role='dialog'>
         <DialogTitle id='dialog-title' className='flex gap-2 items-center font-pt-sans'>
