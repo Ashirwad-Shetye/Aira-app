@@ -8,7 +8,7 @@ import TagsBar from "@/components/tags-bar/tags-bar";
 import Icons from "@/components/ui/icons";
 import { useSession } from "next-auth/react";
 import { Flow } from "@/types/flows";
-import { supabase } from "@/lib/supabase/client";
+import { supabase, supabaseAdmin } from "@/lib/supabase/client";
 import FlowCard from "@/components/flow/flow-card";
 import ScrollableHeaderLayout from "@/components/layouts/scrollable-header-layout";
 import HeaderNavbar from "@/components/header-navbar/header-navbar";
@@ -77,7 +77,9 @@ const Flows = () => {
 				}
 				const { data, error } = await supabase
 					.from("flows")
-					.select("id, title, bio, created_at, updated_at, user_id")
+					.select(
+						"id, title, bio, created_at, updated_at, user_id, cover_photo_url, cover_photo_blurhash"
+					)
 					.eq("user_id", session.user.id)
 					.order("created_at", { ascending: false });
 
@@ -112,23 +114,53 @@ const Flows = () => {
 
 	const confirmDelete = async () => {
 		if (!selectedFlow) return;
+
 		setDeletingIds((prev) => new Set(prev).add(selectedFlow.id));
-		// Optionally, show a toast here for deleting
-		const { error } = await supabase.from("flows").delete().eq("id", selectedFlow.id);
-		if (!error) {
-			setFlows((prev) => prev.filter((f) => f.id !== selectedFlow.id));
-			toast.success("Flow deleted successfully.");
-		} else {
-			toast.error("Failed to delete flow.");
-			setError(error.message);
+
+		try {
+			// 1. Extract the cover photo filename from the URL
+			const coverUrl = selectedFlow.cover_photo_url;
+			if (coverUrl) {
+				const filePath = coverUrl.split("/flow-cover-photos/")[1];
+				if (filePath) {
+					const { error: storageError } = await supabaseAdmin.storage
+						.from("flow-cover-photos")
+						.remove([filePath]);
+
+					if (storageError) {
+						console.warn(
+							"⚠️ Failed to delete cover photo:",
+							storageError.message
+						);
+					}
+				}
+			}
+
+			// 2. Delete the flow
+			const { error } = await supabase
+				.from("flows")
+				.delete()
+				.eq("id", selectedFlow.id);
+
+			if (error) {
+				toast.error("Failed to delete flow.");
+				setError(error.message);
+			} else {
+				setFlows((prev) => prev.filter((f) => f.id !== selectedFlow.id));
+				toast.success("Flow deleted successfully.");
+			}
+		} catch (err: any) {
+			console.error("❌ Error during flow deletion:", err.message);
+			toast.error("An unexpected error occurred.");
+		} finally {
+			setDeletingIds((prev) => {
+				const next = new Set(prev);
+				next.delete(selectedFlow.id);
+				return next;
+			});
+			setConfirmDialogOpen(false);
+			setSelectedFlow(null);
 		}
-		setDeletingIds((prev) => {
-			const next = new Set(prev);
-			next.delete(selectedFlow.id);
-			return next;
-		});
-		setConfirmDialogOpen(false);
-		setSelectedFlow(null);
 	};
 
 	async function handleSaveFlow(data: {

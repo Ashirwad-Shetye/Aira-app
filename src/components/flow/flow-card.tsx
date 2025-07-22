@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { supabase } from '@/lib/supabase/client';
 import { useSession } from 'next-auth/react';
+import BlurhashCanvas from '@/lib/blurhash-utils';
+import Image from 'next/image'
 
 type Props = {
     flow: Flow
@@ -63,17 +65,58 @@ const FlowCard = ( { flow, latestFlow, onEdit, onDelete }: Props ) => {
     return (
 			<div
 				onClick={() => handleOpenFlow(flow.id)}
-				className='border rounded-xl p-4 bg-white flex flex-col hover:shadow justify-between transition-all duration-300 ease-in-out transform'
+				className='border rounded-xl p-4 bg-white flex flex-col gap-3 hover:shadow justify-between transition-all duration-300 ease-in-out transform'
 			>
-				<div className='flex items-center gap-3'>
-					{latestFlow && (
-						<p className='text-sm bg-amber-600 text-white px-2 py-0.5 rounded-full w-fit'>
-							Latest
-						</p>
+				<div className='flex flex-col gap-1 relative'>
+					{flow.cover_photo_url ? (
+						<div className='relative w-full aspect-[4/1] rounded-lg group overflow-hidden bg-muted/50'>
+							{flow.cover_photo_blurhash && (
+								<BlurhashCanvas
+									hash={flow.cover_photo_blurhash}
+									width={32}
+									height={8}
+									punch={1}
+								/>
+							)}
+							<Image
+								src={flow.cover_photo_url}
+								alt='Cover'
+								className='w-full h-full object-cover transition-opacity duration-300 relative z-10'
+								loading='lazy'
+								onLoad={(e) => {
+									e.currentTarget.style.opacity = "1";
+								}}
+								height={2000}
+								width={2000}
+								style={{
+									opacity: flow.cover_photo_blurhash ? 0 : 1,
+									position: "absolute",
+									top: 0,
+									left: 0,
+								}}
+								unoptimized
+							/>
+						</div>
+					) : (
+						<div className='relative w-full aspect-[4/1] rounded-lg group overflow-hidden bg-muted/50'>
+							{flow.cover_photo_blurhash && (
+								<BlurhashCanvas
+									hash={flow.cover_photo_blurhash}
+									width={32}
+									height={8}
+									punch={1}
+								/>
+							)}
+						</div>
 					)}
-					<p className='text-gray-500'>{formatDate(flow.created_at)}</p>
-				</div>
-				<div className='flex flex-col gap-1 pt-2 relative'>
+					<div className='flex items-center gap-3 pt-2'>
+						{latestFlow && (
+							<p className='text-sm bg-amber-600 text-white px-2 py-0.5 rounded-full w-fit'>
+								Latest
+							</p>
+						)}
+						<p className='text-gray-500'>{formatDate(flow.created_at)}</p>
+					</div>
 					<h1 className='text-md font-semibold text-wrap line-clamp-3 truncate'>
 						{flow.title}
 					</h1>

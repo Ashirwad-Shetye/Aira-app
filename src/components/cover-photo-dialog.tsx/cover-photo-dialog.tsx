@@ -15,6 +15,8 @@ import { supabaseAdmin, supabase } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { useImageCrop } from "@/hooks/use-image-crop";
 import getBlurhashFromImage from "@/lib/blurhash-from-image";
+import { useState } from "react";
+import Icons from "../ui/icons";
 
 export default function CoverPhotoDialog({
 	open,
@@ -26,7 +28,8 @@ export default function CoverPhotoDialog({
 	onOpenChange: (open: boolean) => void;
 	flowId: string;
 	onCoverUpdated: (url: string, blurhash: string) => void;
-}) {
+    } ) {
+    const [isSaving, setIsSaving] = useState<boolean>(false);
 	const {
 		imageSrc,
 		croppedImage,
@@ -49,80 +52,111 @@ export default function CoverPhotoDialog({
             return;
         }
 
+        setIsSaving(true); // Start loading
+
         const fileName = `${flowId}-${Date.now()}.jpeg`;
 
-        // ⬇️ Step 1: Fetch existing flow to get old cover photo URL
+        try {
+            // Step 1: Fetch old photo
+            const { data: existingFlow } = await supabase
+                .from("flows")
+                .select("cover_photo_url")
+                .eq("id", flowId)
+                .single();
+            const oldUrl = existingFlow?.cover_photo_url;
+
+            // Step 2: Upload
+            const { data: upload, error: uploadError } = await supabaseAdmin.storage
+                .from("flow-cover-photos")
+                .upload(fileName, croppedImage, {
+                    contentType: "image/jpeg",
+                    upsert: true,
+                });
+            if (uploadError) throw new Error("Upload failed");
+
+            // Step 3: Get URL
+            const url = supabaseAdmin.storage
+                .from("flow-cover-photos")
+                .getPublicUrl(fileName).data.publicUrl;
+
+            // Step 4: Blurhash
+            const blurhash = await getBlurhashFromImage(croppedImage);
+
+            // Step 5: DB update
+            const { error: dbError } = await supabase
+                .from("flows")
+                .update({
+                    cover_photo_url: url,
+                    cover_photo_blurhash: blurhash,
+                })
+                .eq("id", flowId);
+            if (dbError) throw new Error("Failed to update database");
+
+            // Step 6: Delete old
+            if (oldUrl) {
+                const oldFileName = oldUrl.split("/").pop();
+                await supabaseAdmin.storage
+                    .from("flow-cover-photos")
+                    .remove([oldFileName]);
+            }
+
+            toast.success("Cover updated");
+            onCoverUpdated(url, blurhash);
+            onOpenChange(false);
+        } catch (err: any) {
+            toast.error(err.message || "Something went wrong");
+        } finally {
+            setIsSaving( false ); // End loading
+            handleReset()
+        }
+    };
+
+	const handleCancel = () => {
+		reset();
+		onOpenChange(false);
+    };
+    
+    const handleReset = async () => {
         const { data: existingFlow, error: fetchError } = await supabase
             .from("flows")
             .select("cover_photo_url")
             .eq("id", flowId)
             .single();
 
-        const oldUrl = existingFlow?.cover_photo_url;
+        if (fetchError || !existingFlow?.cover_photo_url) {
+            toast.error("No cover photo to reset.");
+            return;
+        }
 
-        // ⬇️ Step 2: Upload new image
-        const { data: upload, error: uploadError } = await supabaseAdmin.storage
+        const segments = existingFlow.cover_photo_url.split("/");
+        const fileName = segments[segments.length - 1];
+
+        const { error: deleteError } = await supabaseAdmin.storage
             .from("flow-cover-photos")
-            .upload(fileName, croppedImage, {
-                contentType: "image/jpeg",
-                upsert: true,
-            });
+            .remove([fileName]);
 
-        if (uploadError) {
-            toast.error("Upload failed");
+        if (deleteError) {
+            toast.error("Failed to delete image");
             return;
         }
 
-        const url = supabaseAdmin.storage.from("flow-cover-photos").getPublicUrl(fileName)
-            .data.publicUrl;
-
-        // ⬇️ Step 3: Generate blurhash
-        let blurhash: string;
-        try {
-            blurhash = await getBlurhashFromImage(croppedImage);
-        } catch (error) {
-            toast.error("Failed to generate blurhash");
-            return;
-        }
-
-        // ⬇️ Step 4: Update database
-        const { error: dbError } = await supabase
+        const { error: updateError } = await supabase
             .from("flows")
             .update({
-                cover_photo_url: url,
-                cover_photo_blurhash: blurhash,
+                cover_photo_url: null,
+                cover_photo_blurhash: null,
             })
             .eq("id", flowId);
 
-        if (dbError) {
-            toast.error("Failed to update flow");
+        if (updateError) {
+            toast.error("Failed to reset cover photo");
             return;
         }
 
-        // ⬇️ Step 5: Delete old image from storage (if it existed)
-        if (oldUrl) {
-            const segments = oldUrl.split("/");
-            const oldFileName = segments[segments.length - 1];
-
-            const { error: deleteError } = await supabaseAdmin.storage
-                .from("flow-cover-photos")
-                .remove([oldFileName]);
-
-            if (deleteError) {
-                console.warn("⚠️ Failed to delete old cover photo:", deleteError.message);
-            }
-        }
-
-        // ⬇️ Step 6: Notify and update local state
-        toast.success("Cover updated");
-        onCoverUpdated(url, blurhash);
+        toast.success("Cover photo reset to default");
+        onCoverUpdated("", "");
         onOpenChange(false);
     };
-
-	const handleCancel = () => {
-		reset();
-		onOpenChange(false);
-	};
 
 	return (
 		<Dialog
@@ -187,18 +221,34 @@ export default function CoverPhotoDialog({
 				)}
 
 				<DialogFooter>
-					<Button
-						variant='ghost'
-						onClick={handleCancel}
-					>
-						Cancel
-					</Button>
-					<Button
-						disabled={!croppedImage}
-						onClick={handleSave}
-					>
-						Save
-					</Button>
+					{isSaving ? (
+						<div className='w-full flex items-center justify-center py-5'>
+							<Icons.loader className='h-5 w-5 animate-spin text-muted-foreground' />
+						</div>
+					) : (
+						<div className='flex items-center justify-between w-full'>
+							<Button
+								variant='ghost'
+								onClick={handleReset}
+							>
+								Remove banner
+							</Button>
+							<div className='flex items-center gap-5'>
+								<Button
+									variant='ghost'
+									onClick={handleCancel}
+								>
+									Cancel
+								</Button>
+								<Button
+									disabled={!croppedImage}
+									onClick={handleSave}
+								>
+									Save
+								</Button>
+							</div>
+						</div>
+					)}
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>

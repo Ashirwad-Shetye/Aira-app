@@ -12,24 +12,44 @@ interface ScrollableHeaderLayoutProps {
 export default function ScrollableHeaderLayout({
 	header,
 	children,
-	scrollContainerRef, // Accept the ref from the parent
+	scrollContainerRef,
 }: ScrollableHeaderLayoutProps) {
 	const defaultScrollRef = useRef<HTMLDivElement>(null);
 	const [showHeader, setShowHeader] = useState(true);
 	const [lastScrollTop, setLastScrollTop] = useState(0);
+	const [shadow, setShadow] = useState(false);
 
 	useEffect(() => {
 		const container = scrollContainerRef?.current || defaultScrollRef.current;
 		if (!container) return;
 
+		let ticking = false;
+		const SCROLL_THRESHOLD = 160;
+		const BUFFER = 20;
+
 		const handleScroll = () => {
-			const scrollTop = container.scrollTop;
-			if (scrollTop > lastScrollTop && scrollTop > 40) {
-				setShowHeader(false);
-			} else {
-				setShowHeader(true);
-			}
-			setLastScrollTop(scrollTop <= 0 ? 0 : scrollTop);
+			if (ticking) return;
+
+			ticking = true;
+			requestAnimationFrame(() => {
+				const scrollTop = container.scrollTop;
+
+				// Add shadow when past threshold
+				setShadow(scrollTop > 10);
+
+				if (scrollTop > SCROLL_THRESHOLD + BUFFER) {
+					if (scrollTop > lastScrollTop + 5) {
+						setShowHeader(false);
+					} else if (scrollTop < lastScrollTop - 5) {
+						setShowHeader(true);
+					}
+				} else {
+					setShowHeader(true); // Always show above threshold
+				}
+
+				setLastScrollTop(Math.max(0, scrollTop));
+				ticking = false;
+			});
 		};
 
 		container.addEventListener("scroll", handleScroll);
@@ -40,10 +60,11 @@ export default function ScrollableHeaderLayout({
 		<div className='flex flex-col overflow-hidden relative w-full flex-1 min-h-0'>
 			<div
 				className={cn(
-					"sticky top-0 z-30 bg-white overflow-hidden transition-all duration-500 ease-in-out",
+					"sticky top-0 z-30 bg-white transition-all duration-500 ease-in-out",
 					showHeader
-						? "h-auto opacity-100 translate-y-0 delay-100"
-						: "h-0 opacity-0 -translate-y-full"
+						? "opacity-100 translate-y-0 delay-100"
+						: "opacity-0 -translate-y-full",
+					shadow && "shadow-sm"
 				)}
 			>
 				{header}

@@ -249,7 +249,7 @@ export default function FlowIdPage() {
 						) : (
 							<div className='flex flex-col gap-3 relative w-full'>
 								{flow.cover_photo_url ? (
-									<div className='relative w-full aspect-[4/1] rounded-lg group overflow-hidden bg-muted/50'>
+									<div className='relative w-full aspect-[4/1] rounded-lg group overflow-hidden bg-muted/50 mb-5'>
 										{flow.cover_photo_blurhash && (
 											<BlurhashCanvas
 												hash={flow.cover_photo_blurhash}
@@ -301,7 +301,7 @@ export default function FlowIdPage() {
 										/>
 									</div>
 								) : (
-									<div className='relative w-full aspect-[4/1] rounded-lg group overflow-hidden bg-muted/50'>
+									<div className='relative w-full aspect-[4/1] rounded-lg group overflow-hidden bg-muted/50 mb-5'>
 										<Button
 											variant='secondary'
 											className='absolute top-5 right-5 z-50 rounded-full transition-all duration-300'
