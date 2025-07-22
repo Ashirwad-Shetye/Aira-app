@@ -6,10 +6,10 @@ import { supabase } from "@/lib/supabase/client";
 import debounce from "lodash/debounce";
 import BottomControls from "@/components/bottom-controls/bottom-controls";
 import CustomBreadcrumb from "@/components/custom-breadcrumb/custom-breadcrumb";
-import MomentEditor from "@/components/editor/MomentEditor";
+import MomentEditor from "@/components/editor/moment-editor";
 import HeaderNavbar from "@/components/header-navbar/header-navbar";
 import BackButton from "@/components/ui/back-button";
-import AutoResizingTitleTextarea from "@/components/editor/AutoResizingTitleTextarea";
+import AutoResizingTitleTextarea from "@/components/editor/auto-resizing-title-textarea";
 import ScrollableHeaderLayout from "@/components/layouts/scrollable-header-layout";
 import { generateSnippet } from "@/lib/text-utils";
 

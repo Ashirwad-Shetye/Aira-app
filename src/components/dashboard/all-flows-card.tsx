@@ -115,10 +115,13 @@ const SingleRecentFlowCard = () => {
 
 	if (!flow) {
 		return (
-			<div className='w-full flex-1 rounded-lg flex flex-col gap-4 p-5 relative overflow-hidden bg-gradient-to-t from-[#C3E0FC]/50 to-white'>
+			<div className='w-full flex-1 rounded-lg flex flex-col gap-4 p-5 relative overflow-hidden bg-white'>
 				<div className='flex items-center justify-between'>
 					<div className='flex flex-col gap-0.5 text-left'>
-						<h1 className='font-pt-sans text-base'>Last Edited Flow</h1>
+						<div className='flex items-center gap-1 font-semibold'>
+							<Icons.flow />
+							<h1 className='font-pt-sans text-base'>Latest Flow</h1>
+						</div>
 						<p className='text-sm'>Pick up where you left off.</p>
 					</div>
 				</div>
@@ -147,12 +150,13 @@ const SingleRecentFlowCard = () => {
 	}
 
 	return (
-		<div className='w-full flex-1 rounded-lg flex flex-col gap-4 p-5 relative overflow-hidden bg-gradient-to-t from-[#C3E0FC]/50 to-white'>
+		<div className='w-full flex-1 rounded-lg flex flex-col gap-4 p-5 relative overflow-hidden bg-white'>
 			{/* Header */}
 			<div className='flex items-center justify-between'>
 				<div className='flex flex-col gap-0.5'>
 					<div className='flex items-center gap-1 font-semibold'>
-						<h1 className='font-pt-sans text-base'>Last Edited Flow</h1>
+						<Icons.flow />
+						<h1 className='font-pt-sans text-base'>Latest Flow</h1>
 					</div>
 					<p className='text-sm text-muted-foreground'>
 						Pick up where you left off.
@@ -202,11 +206,11 @@ const SingleRecentFlowCard = () => {
 
 			{/* Card */}
 			<div
-				className='p-4 flex-1 rounded-lg duration-150 flex flex-col justify-between cursor-pointer bg-white'
+				className='flex-1 rounded-lg duration-150 flex flex-col justify-between cursor-pointer '
 				onClick={() => router.push(`/flows/${flow.id}`)}
 			>
 				<div className='flex flex-col gap-0.5'>
-					<div className="flex items-center justify-between gap-10">
+					<div className='flex items-center justify-between gap-10'>
 						<p className='text-gray-500'>{formatDate(flow.created_at)}</p>
 						{flow.moment_count !== 0 && (
 							<Tooltip>
@@ -230,7 +234,7 @@ const SingleRecentFlowCard = () => {
 				</div>
 
 				<div className='flex justify-between text-gray-500'>
-					<p className="text-sm">
+					<p className='text-sm'>
 						{flow.moment_count} {flow.moment_count === 1 ? "moment" : "moments"}
 					</p>
 					<div className='flex items-center gap-2 text-gray-500'>
