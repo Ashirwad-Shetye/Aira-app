@@ -17,6 +17,10 @@ import { RenameMomentDialog } from "@/components/moment-dialogs/rename-moment-di
 import { ConfirmDialog } from "@/components/custom-alert-dialog/confirm-dialog";
 import { toast } from "sonner";
 import { generateSnippet } from "@/lib/text-utils";
+import { formatDate } from "@/lib/date-convertors";
+import CoverPhotoDialog from "@/components/cover-photo-dialog.tsx/cover-photo-dialog";
+import BlurhashCanvas from "@/lib/blurhash-utils";
+import Image from "next/image";
 
 export default function FlowIdPage() {
 	const { flowId } = useParams();
@@ -33,7 +37,8 @@ export default function FlowIdPage() {
 	const [renameDialogOpen, setRenameDialogOpen] = useState(false);
 	const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 	const [selectedMoment, setSelectedMoment] = useState<Moment | null>(null);
-	const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+	const [ deletingIds, setDeletingIds ] = useState<Set<string>>( new Set() );
+	const [coverDialogOpen, setCoverDialogOpen] = useState<boolean>(false)
 
 	useEffect(() => {
 		if (!flowId || typeof flowId !== "string") return;
@@ -44,7 +49,9 @@ export default function FlowIdPage() {
 			try {
 				const { data, error } = await supabase
 					.from("flows")
-					.select("id, title, bio, created_at, user_id")
+					.select(
+						"id, title, bio, created_at, user_id, cover_photo_url, cover_photo_blurhash"
+					)
 					.eq("id", flowId)
 					.single();
 				if (error || !data) throw error || new Error("Flow not found");
@@ -84,7 +91,9 @@ export default function FlowIdPage() {
 		};
 
 		fetchMoments();
-	}, [flowId, flow]);
+	}, [ flowId, flow ] );
+	
+	console.log(flow)
 
 	const handleRename = (moment: Moment) => {
 		setSelectedMoment(moment);
@@ -224,23 +233,114 @@ export default function FlowIdPage() {
 				</div>
 
 				<div className='flex-1 flex flex-col sm:w-full md:w-[70%] max-w-7xl mx-auto min-h-0 relative'>
-					<div className='flex flex-col gap-3'>
+					<div className='flex flex-col gap-3 relative w-full'>
 						{flowLoading ? (
 							<>
+								<div className='h-40 w-full bg-gray-100 animate-pulse rounded' />
 								<div className='h-8 w-40 bg-gray-100 animate-pulse rounded' />
 								<div className='h-40 w-full bg-gray-100 animate-pulse rounded' />
 							</>
+						) : !flow ? (
+							<div className='flex items-center justify-center flex-1'>
+								<h1 className='font-figtree font-semibold text-muted-foreground text-2xl'>
+									The flow you are looking for does not exist!
+								</h1>
+							</div>
 						) : (
-							<>
+							<div className='flex flex-col gap-3 relative w-full'>
+								{flow.cover_photo_url ? (
+									<div className='relative w-full aspect-[4/1] rounded-lg group overflow-hidden bg-muted/50'>
+										{flow.cover_photo_blurhash && (
+											<BlurhashCanvas
+												hash={flow.cover_photo_blurhash}
+												width={32}
+												height={8}
+												punch={1}
+											/>
+										)}
+										<Image
+											src={flow.cover_photo_url}
+											alt='Cover'
+											className='w-full h-full object-cover transition-opacity duration-300 relative z-10'
+											loading='lazy'
+											onLoad={(e) => {
+												e.currentTarget.style.opacity = "1";
+											}}
+											height={2000}
+											width={2000}
+											style={{
+												opacity: flow.cover_photo_blurhash ? 0 : 1,
+												position: "absolute",
+												top: 0,
+												left: 0,
+											}}
+											unoptimized
+										/>
+										<Button
+											variant='secondary'
+											className='hidden group-hover:block absolute top-5 right-5 z-50 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300'
+											onClick={() => setCoverDialogOpen(true)}
+										>
+											<Icons.pencil className='shrink-0' />
+										</Button>
+										<CoverPhotoDialog
+											open={coverDialogOpen}
+											onOpenChange={setCoverDialogOpen}
+											flowId={flow.id}
+											onCoverUpdated={(url, blurhash) => {
+												setFlow((prev) =>
+													prev
+														? {
+																...prev,
+																cover_photo_url: url,
+																cover_photo_blurhash: blurhash,
+														  }
+														: prev
+												);
+											}}
+										/>
+									</div>
+								) : (
+									<div className='relative w-full aspect-[4/1] rounded-lg group overflow-hidden bg-muted/50'>
+										<Button
+											variant='secondary'
+											className='absolute top-5 right-5 z-50 rounded-full transition-all duration-300'
+											onClick={() => setCoverDialogOpen(true)}
+										>
+											<Icons.pencil className='shrink-0' />
+										</Button>
+										<CoverPhotoDialog
+											open={coverDialogOpen}
+											onOpenChange={setCoverDialogOpen}
+											flowId={flow.id}
+											onCoverUpdated={(url, blurhash) => {
+												setFlow((prev) =>
+													prev
+														? {
+																...prev,
+																cover_photo_url: url,
+																cover_photo_blurhash: blurhash,
+														  }
+														: prev
+												);
+											}}
+										/>
+									</div>
+								)}
 								<h1 className='font-figtree font-semibold text-2xl'>
-									{flow?.title || "Untitled Flow"}
+									{flow.title || "Untitled Flow"}
 								</h1>
 								{flow?.bio ? (
 									<p className='font-figtree'>{flow.bio}</p>
 								) : (
 									<p className='text-muted-foreground'>Add bio</p>
 								)}
-							</>
+								<div>
+									<p className='text-gray-500'>
+										Created on: {formatDate(flow.created_at)}
+									</p>
+								</div>
+							</div>
 						)}
 					</div>
 
@@ -259,7 +359,7 @@ export default function FlowIdPage() {
 						<div className='h-6 w-full bg-gradient-to-t from-transparent via-white/90 to-white' />
 					</div>
 
-					{momentsLoading ? (
+					{flow && momentsLoading ? (
 						<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2'>
 							{Array.from({ length: 6 }).map((_, i) => (
 								<div
@@ -268,7 +368,7 @@ export default function FlowIdPage() {
 								/>
 							))}
 						</div>
-					) : moments.length === 0 ? (
+					) : flow && moments.length === 0 ? (
 						<p className='text-muted-foreground mt-4'>
 							No moments yet. Add your first one.
 						</p>

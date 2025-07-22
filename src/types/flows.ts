@@ -6,4 +6,6 @@ export interface Flow {
     participant?: string[]
     current_writer?: string
 	created_at: string;
+	cover_photo_url?: string
+	cover_photo_blurhash?: string
 }
