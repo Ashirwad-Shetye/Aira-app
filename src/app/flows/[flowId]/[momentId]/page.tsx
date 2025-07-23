@@ -12,11 +12,12 @@ import BackButton from "@/components/ui/back-button";
 import AutoResizingTitleTextarea from "@/components/editor/auto-resizing-title-textarea";
 import ScrollableHeaderLayout from "@/components/layouts/scrollable-header-layout";
 import { generateSnippet } from "@/lib/text-utils";
+import { useVoiceTyping } from "@/hooks/use-voice-typing";
 
 export default function MomentEditorPage() {
 	const { flowId, momentId } = useParams();
 	const scrollContainerRef = useRef<HTMLDivElement>(null);
-
+	const editorRef = useRef<any>(null);
 	const [flowTitle, setFlowTitle] = useState("");
 	const [title, setTitle] = useState("");
 	const [content, setContent] = useState("");
@@ -66,7 +67,26 @@ export default function MomentEditorPage() {
 			setIsMomentLoading(false);
 		};
 		fetchMoment();
-	}, [momentId]);
+	}, [ momentId ] );
+	
+	const debouncedOnText = useCallback(
+		debounce((text: string) => {
+			if (editorRef.current) {
+				editorRef.current.commands.focus();
+				editorRef.current.commands.insertContent(text + " ");
+			}
+		}, 200),
+		[]
+	);
+
+	const {
+		isListening,
+		start,
+		stop,
+		error: voiceError,
+	} = useVoiceTyping({
+		onText: debouncedOnText,
+	});
 
 	const saveMoment = async (updatedTitle: string, updatedContent: string) => {
 		setIsSaving( true );
@@ -157,11 +177,44 @@ export default function MomentEditorPage() {
 										setContent(html);
 										debouncedSave(title, html);
 									}}
+									editorRef={editorRef}
 								/>
 							</div>
 						</>
 					)}
 				</div>
+			</div>
+			<div className='flex justify-center items-center px-10 pb-5 gap-4'>
+				{voiceError && (
+					<div className='flex items-center gap-2 text-red-500 text-sm'>
+						<p>{voiceError}</p>
+						<button
+							onClick={() => setError(null)}
+							className='text-sm underline'
+						>
+							Dismiss
+						</button>
+					</div>
+				)}
+				<canvas
+					id='waveform'
+					width={300}
+					height={60}
+					className='rounded-md bg-white'
+				></canvas>
+				<button
+					onClick={isListening ? stop : start}
+					disabled={isMomentLoading || isFlowLoading}
+					className={`px-4 py-2 rounded-md text-white font-medium ${
+						isListening ? "bg-red-500" : "bg-green-600"
+					} ${
+						isMomentLoading || isFlowLoading
+							? "opacity-50 cursor-not-allowed"
+							: "hover:opacity-90"
+					} transition`}
+				>
+					{isListening ? "Stop Voice Typing" : "Start Voice Typing"}
+				</button>
 			</div>
 			<BottomControls
 				status={true}

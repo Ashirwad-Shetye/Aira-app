@@ -34,31 +34,32 @@ const COLORS = [
 export default function MomentEditor({
 	initialContent,
 	onChange,
+	editorRef,
 }: {
 	initialContent?: string;
 	onChange?: (html: string) => void;
-    } ) {
-    
-    const [showColorPanel, setShowColorPanel] = useState(false);
+	editorRef?: React.MutableRefObject<any>;
+}) {
+	const [showColorPanel, setShowColorPanel] = useState(false);
 	const colorPanelRef = useRef<HTMLDivElement>(null);
-    const colorButtonRef = useRef<HTMLButtonElement>( null );
-    
-    useEffect(() => {
-            if (!showColorPanel) return;
-            const handleClick = (e: MouseEvent) => {
-                if (
-                    colorPanelRef.current &&
-                    !colorPanelRef.current.contains(e.target as Node) &&
-                    colorButtonRef.current &&
-                    !colorButtonRef.current.contains(e.target as Node)
-                ) {
-                    setShowColorPanel(false);
-                }
-            };
-            document.addEventListener("mousedown", handleClick);
-            return () => document.removeEventListener("mousedown", handleClick);
-    }, [ showColorPanel ] );
-    
+	const colorButtonRef = useRef<HTMLButtonElement>(null);
+
+	useEffect(() => {
+		if (!showColorPanel) return;
+		const handleClick = (e: MouseEvent) => {
+			if (
+				colorPanelRef.current &&
+				!colorPanelRef.current.contains(e.target as Node) &&
+				colorButtonRef.current &&
+				!colorButtonRef.current.contains(e.target as Node)
+			) {
+				setShowColorPanel(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClick);
+		return () => document.removeEventListener("mousedown", handleClick);
+	}, [showColorPanel]);
+
 	const editor = useEditor({
 		extensions: [
 			StarterKit,
@@ -75,7 +76,16 @@ export default function MomentEditor({
 			onChange?.(editor.getHTML());
 		},
 		immediatelyRender: false,
-	});
+	} );
+	
+	useEffect(() => {
+		if (editor && editorRef) {
+			editorRef.current = editor;
+			requestAnimationFrame(() => {
+				editor.commands.focus("end");
+			});
+		}
+	}, [editor, editorRef]);
 
 	if (!editor) return null;
 
