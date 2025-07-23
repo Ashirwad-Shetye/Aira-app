@@ -13,19 +13,20 @@ import ScrollableHeaderLayout from "@/components/layouts/scrollable-header-layou
 import HeaderNavbar from "@/components/header-navbar/header-navbar";
 import { ConfirmDialog } from "@/components/custom-alert-dialog/confirm-dialog";
 import { toast } from "sonner";
+import { SortByComboBox } from "@/components/combo-box/sort-by-combo-box";
 
 const Flows = () => {
 	const [flows, setFlows] = useState<Flow[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const { data: session, status } = useSession();
-	const [hasFetched, setHasFetched] = useState(false);
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [editFlow, setEditFlow] = useState<Flow | null>(null);
 	const scrollContainerRef = useRef<HTMLDivElement>(null);
 	const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 	const [selectedFlow, setSelectedFlow] = useState<Flow | null>(null);
-	const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+	const [ deletingIds, setDeletingIds ] = useState<Set<string>>( new Set() );
+	const [sortByValue, setSortByValue] = useState("last edited");
 
 	const tags = [
 		"mindfulness",
@@ -61,30 +62,49 @@ const Flows = () => {
 	];
 
 	useEffect(() => {
-		if (hasFetched || status !== "authenticated" || !session?.user?.id) {
-			return;
-		}
+		if (status !== "authenticated" || !session?.user?.id) return;
 
 		async function fetchFlows() {
 			setIsLoading(true);
 			setError(null);
 
 			try {
-				if (!session || !session.user?.id) {
-					setIsLoading(false);
-					return;
+				let column = "last_activity";
+				let ascending = false;
+
+				switch (sortByValue) {
+					case "last created":
+						column = "created_at";
+						ascending = false;
+						break;
+					case "last edited":
+						column = "last_activity";
+						ascending = false;
+						break;
+					case "oldest created":
+						column = "created_at";
+						ascending = true;
+						break;
+					case "oldest edited":
+						column = "last_activity";
+						ascending = true;
+						break;
+					default:
+						column = "last_activity";
+						ascending = false;
 				}
-				const { data, error } = await supabase.rpc(
-					"get_flows_with_moment_data",
-					{ user_id_input: session.user.id }
-				);
+
+				const { data, error } = await supabase
+					.rpc("get_flows_with_moment_data", {
+						user_id_input: session?.user.id,
+					})
+					.order(column, { ascending });
 
 				if (error) {
 					throw new Error(`Error fetching flows: ${error.message}`);
 				}
 
 				setFlows(data);
-				setHasFetched(true);
 			} catch (error: any) {
 				console.error(error);
 				setError(error.message);
@@ -94,7 +114,7 @@ const Flows = () => {
 		}
 
 		fetchFlows();
-	}, [session, status, hasFetched]);
+	}, [session, status, sortByValue]);
 
 	const handleEditFlow = (flow: Flow) => {
 		setEditFlow(flow);
@@ -186,6 +206,14 @@ const Flows = () => {
 		setIsLoading(false);
 	}
 
+	const latestActivityTimestamp = flows.reduce((latest: string | null, flow) => {
+		if (!latest) return flow.last_activity ?? null;
+		if (!flow.last_activity) return latest;
+		return new Date(flow.last_activity) > new Date(latest)
+			? flow.last_activity
+			: latest;
+	}, null);
+
 	return (
 		<ScrollableHeaderLayout
 			header={<HeaderNavbar />}
@@ -254,6 +282,14 @@ const Flows = () => {
 						</div>
 						<div className='sticky top-14 z-40 w-full'>
 							<TagsBar tags={tags} />
+							<div className='bg-white w-full flex items-center py-5 justify-end'>
+								<div>
+									<SortByComboBox
+										value={sortByValue}
+										setValue={setSortByValue}
+									/>
+								</div>
+							</div>
 							<div className='h-6 w-full bg-gradient-to-t from-transparent via-white/90 to-white' />
 						</div>
 						{isLoading ? (
@@ -276,7 +312,7 @@ const Flows = () => {
 										<FlowCard
 											key={`${flow.id}_${idx}`}
 											flow={flow}
-											latestFlow={flow.id === flows[0].id}
+											latestFlow={flow.last_activity === latestActivityTimestamp}
 											onEdit={handleEditFlow}
 											onDelete={handleDeleteFlow}
 										/>

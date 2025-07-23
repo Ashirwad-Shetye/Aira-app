@@ -19,6 +19,7 @@ import { LuWind as flow } from "react-icons/lu";
 import { GoPlus as add } from "react-icons/go";
 import { RxDotsHorizontal as menuDots } from "react-icons/rx";
 import { AiOutlineLoading3Quarters as loader } from "react-icons/ai";
+import { TbArrowsSort as sort} from "react-icons/tb";
 
 const Icons = {
 	signout,
@@ -36,7 +37,8 @@ const Icons = {
 	check,
 	trash,
 	edit,
-	pencil
+	pencil,
+	sort
 };
 
 export default Icons;

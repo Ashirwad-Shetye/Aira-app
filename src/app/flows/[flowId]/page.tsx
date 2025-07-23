@@ -21,6 +21,7 @@ import { formatDate } from "@/lib/date-convertors";
 import CoverPhotoDialog from "@/components/cover-photo-dialog.tsx/cover-photo-dialog";
 import BlurhashCanvas from "@/lib/blurhash-utils";
 import Image from "next/image";
+import { SortByComboBox } from "@/components/combo-box/sort-by-combo-box";
 
 export default function FlowIdPage() {
 	const { flowId } = useParams();
@@ -38,7 +39,8 @@ export default function FlowIdPage() {
 	const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 	const [selectedMoment, setSelectedMoment] = useState<Moment | null>(null);
 	const [ deletingIds, setDeletingIds ] = useState<Set<string>>( new Set() );
-	const [coverDialogOpen, setCoverDialogOpen] = useState<boolean>(false)
+	const [ coverDialogOpen, setCoverDialogOpen ] = useState<boolean>( false )
+	const [sortByValue, setSortByValue] = useState("last edited");
 
 	useEffect(() => {
 		if (!flowId || typeof flowId !== "string") return;
@@ -74,16 +76,41 @@ export default function FlowIdPage() {
 		const fetchMoments = async () => {
 			setMomentsLoading(true);
 			try {
+				let column = "updated_at";
+				let ascending = false;
+
+				switch (sortByValue) {
+					case "last created":
+						column = "created_at";
+						ascending = false;
+						break;
+					case "last edited":
+						column = "updated_at";
+						ascending = false;
+						break;
+					case "oldest created":
+						column = "created_at";
+						ascending = true;
+						break;
+					case "oldest edited":
+						column = "updated_at";
+						ascending = true;
+						break;
+					default:
+						column = "updated_at";
+						ascending = false;
+				}
+
 				const { data, error } = await supabase
 					.from("moments")
 					.select("id, flow_id, title, created_at, updated_at, snippet")
 					.eq("flow_id", flowId)
-					.order("updated_at", { ascending: false });
+					.order(column, { ascending });
 
 				if (error) throw error;
 				setMoments(data ?? []);
 			} catch (err: any) {
-				console.error("\u274C Error loading moments:", err.message);
+				console.error("❌ Error loading moments:", err.message);
 				toast.error("Failed to load moments.");
 			} finally {
 				setMomentsLoading(false);
@@ -91,7 +118,7 @@ export default function FlowIdPage() {
 		};
 
 		fetchMoments();
-	}, [ flowId, flow ] );
+	}, [flowId, flow, sortByValue]);
 	
 	console.log(flow)
 
@@ -354,6 +381,11 @@ export default function FlowIdPage() {
 									placeholder='Search your moments'
 									className='text-gray-800 w-full font-cabin focus:ring-0 outline-none'
 								/>
+							</div>
+						</div>
+						<div className="bg-white w-full flex items-center justify-end">
+							<div>
+								<SortByComboBox value={sortByValue} setValue={setSortByValue} />
 							</div>
 						</div>
 						<div className='h-6 w-full bg-gradient-to-t from-transparent via-white/90 to-white' />
