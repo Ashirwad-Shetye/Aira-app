@@ -67,7 +67,7 @@ const FlowCard = ( { flow, latestFlow, onEdit, onDelete }: Props ) => {
 				onClick={() => handleOpenFlow(flow.id)}
 				className='border rounded-xl p-4 bg-white flex flex-col gap-3 hover:shadow justify-between transition-all duration-300 ease-in-out transform'
 			>
-				<div className='flex flex-col gap-1 relative'>
+				<div className='flex flex-col gap-1 relative cursor-default'>
 					{flow.cover_photo_url ? (
 						<div className='relative w-full aspect-[4/1] rounded-lg group overflow-hidden bg-muted/50'>
 							{flow.cover_photo_blurhash && (
@@ -126,122 +126,138 @@ const FlowCard = ( { flow, latestFlow, onEdit, onDelete }: Props ) => {
 						</p>
 					)}
 				</div>
-				<div className='flex items-center gap-2 justify-end'>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<button
-								type='button'
-								onClick={(e) => {
-									e.stopPropagation();
-									handleOpenFlow(flow.id);
-								}}
-								className='cursor-pointer text-gray-500 h-6 w-6 flex items-center justify-center rounded hover:bg-gray-100 duration-150 active:scale-95'
-							>
-								<Icons.moment />
-							</button>
-						</TooltipTrigger>
-						<TooltipContent
-							side='bottom'
-							sideOffset={5}
-						>
-							<p>Moments</p>
-						</TooltipContent>
-					</Tooltip>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<button
-								type='button'
-								onClick={(e) => {
-									e.stopPropagation();
-									handleCreateNewMoment(flow.id);
-								}}
-								className='cursor-pointer text-gray-500 h-6 w-6 flex items-center justify-center rounded hover:bg-gray-100 duration-150 active:scale-95'
-							>
-								<Icons.add />
-							</button>
-						</TooltipTrigger>
-						<TooltipContent
-							side='bottom'
-							sideOffset={5}
-						>
-							<p>Add a new moment</p>
-						</TooltipContent>
-					</Tooltip>
-					{onEdit && onDelete ? (
-						<DropdownMenu>
-							<DropdownMenuTrigger className='outline-none focus:ring-0 cursor-pointer'>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<div
-											onClick={(e) => e.stopPropagation()}
-											className='cursor-pointer text-gray-500 h-6 w-6 flex items-center justify-center rounded hover:bg-gray-100 duration-150 active:scale-95'
-										>
-											<Icons.menuDots />
-										</div>
-									</TooltipTrigger>
-									<TooltipContent
-										side='bottom'
-										sideOffset={5}
-									>
-										<p>More</p>
-									</TooltipContent>
-								</Tooltip>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent
-								side='top'
-								align='end'
-								sideOffset={5}
-							>
-								{onEdit && (
-									<DropdownMenuItem
-										className='cursor-pointer'
+				<div className='flex flex-col gap-2'>
+					<div className='flex items-center justify-between text-sm cursor-default'>
+						<p className='text-xs text-gray-400'>
+							Last activity:{" "}
+							{flow.last_activity ? formatDate(flow.last_activity) : "—"}
+						</p>
+					</div>
+					<div className='flex items-center gap-5 justify-between w-full'>
+						<div className='text-sm'>
+							<p className='text-muted-foreground bg-muted px-2 py-0.5 rounded cursor-default'>
+								{flow.moment_count ?? 0}{" "}
+								{flow.moment_count === 1 ? "moment" : "moments"}
+							</p>
+						</div>
+						<div className='flex items-center gap-2'>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<button
+										type='button'
 										onClick={(e) => {
 											e.stopPropagation();
-											onEdit(flow);
+											handleOpenFlow(flow.id);
 										}}
+										className='cursor-pointer text-gray-500 h-6 w-6 flex items-center justify-center rounded hover:bg-gray-100 duration-150 active:scale-95'
 									>
-										Edit
-									</DropdownMenuItem>
-								)}
-								{onDelete && (
-									<DropdownMenuItem
-										className='cursor-pointer'
+										<Icons.moment />
+									</button>
+								</TooltipTrigger>
+								<TooltipContent
+									side='bottom'
+									sideOffset={5}
+								>
+									<p>Moments</p>
+								</TooltipContent>
+							</Tooltip>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<button
+										type='button'
 										onClick={(e) => {
 											e.stopPropagation();
-											onDelete(flow.id);
+											handleCreateNewMoment(flow.id);
 										}}
+										className='cursor-pointer text-gray-500 h-6 w-6 flex items-center justify-center rounded hover:bg-gray-100 duration-150 active:scale-95'
 									>
-										Delete
-									</DropdownMenuItem>
-								)}
-							</DropdownMenuContent>
-						</DropdownMenu>
-					) : (
-						<>
-							{onDelete && (
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<button
-											type='button'
-											onClick={(e) => {
-												e.stopPropagation();
-												onDelete(flow.id);
-											}}
-											className='cursor-pointer text-gray-500 h-6 w-6 flex items-center justify-center rounded hover:bg-gray-100 hover:text-red-400 duration-150 active:scale-95'
-										>
-											<Icons.trash />
-										</button>
-									</TooltipTrigger>
-									<TooltipContent
-										side='bottom'
+										<Icons.add />
+									</button>
+								</TooltipTrigger>
+								<TooltipContent
+									side='bottom'
+									sideOffset={5}
+								>
+									<p>Add a new moment</p>
+								</TooltipContent>
+							</Tooltip>
+							{onEdit && onDelete ? (
+								<DropdownMenu>
+									<DropdownMenuTrigger className='outline-none focus:ring-0 cursor-pointer'>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<div
+													onClick={(e) => e.stopPropagation()}
+													className='cursor-pointer text-gray-500 h-6 w-6 flex items-center justify-center rounded hover:bg-gray-100 duration-150 active:scale-95'
+												>
+													<Icons.menuDots />
+												</div>
+											</TooltipTrigger>
+											<TooltipContent
+												side='bottom'
+												sideOffset={5}
+											>
+												<p>More</p>
+											</TooltipContent>
+										</Tooltip>
+									</DropdownMenuTrigger>
+									<DropdownMenuContent
+										side='top'
+										align='end'
 										sideOffset={5}
 									>
-										<p>Delete</p>
-									</TooltipContent>
-								</Tooltip>
+										{onEdit && (
+											<DropdownMenuItem
+												className='cursor-pointer'
+												onClick={(e) => {
+													e.stopPropagation();
+													onEdit(flow);
+												}}
+											>
+												Edit
+											</DropdownMenuItem>
+										)}
+										{onDelete && (
+											<DropdownMenuItem
+												className='cursor-pointer'
+												onClick={(e) => {
+													e.stopPropagation();
+													onDelete(flow.id);
+												}}
+											>
+												Delete
+											</DropdownMenuItem>
+										)}
+									</DropdownMenuContent>
+								</DropdownMenu>
+							) : (
+								<>
+									{onDelete && (
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<button
+													type='button'
+													onClick={(e) => {
+														e.stopPropagation();
+														onDelete(flow.id);
+													}}
+													className='cursor-pointer text-gray-500 h-6 w-6 flex items-center justify-center rounded hover:bg-gray-100 hover:text-red-400 duration-150 active:scale-95'
+												>
+													<Icons.trash />
+												</button>
+											</TooltipTrigger>
+											<TooltipContent
+												side='bottom'
+												sideOffset={5}
+											>
+												<p>Delete</p>
+											</TooltipContent>
+										</Tooltip>
+									)}
+								</>
 							)}
-						</>
-					)}
+						</div>
+					</div>
 				</div>
 			</div>
 		);

@@ -78,7 +78,7 @@ export default function FlowIdPage() {
 					.from("moments")
 					.select("id, flow_id, title, created_at, updated_at, snippet")
 					.eq("flow_id", flowId)
-					.order("created_at", { ascending: false });
+					.order("updated_at", { ascending: false });
 
 				if (error) throw error;
 				setMoments(data ?? []);

@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import BottomControls from "@/components/bottom-controls/bottom-controls";
-import LeftNavbar from "@/components/left-navbar/left-navbar";
 import { NewFlowDialog } from "@/components/new-flow-dialog/new-flow-dialog";
 import TagsBar from "@/components/tags-bar/tags-bar";
 import Icons from "@/components/ui/icons";
@@ -75,13 +74,10 @@ const Flows = () => {
 					setIsLoading(false);
 					return;
 				}
-				const { data, error } = await supabase
-					.from("flows")
-					.select(
-						"id, title, bio, created_at, updated_at, user_id, cover_photo_url, cover_photo_blurhash"
-					)
-					.eq("user_id", session.user.id)
-					.order("created_at", { ascending: false });
+				const { data, error } = await supabase.rpc(
+					"get_flows_with_moment_data",
+					{ user_id_input: session.user.id }
+				);
 
 				if (error) {
 					throw new Error(`Error fetching flows: ${error.message}`);
@@ -209,7 +205,7 @@ const Flows = () => {
 									<Icons.search />
 									<input
 										type='text'
-										placeholder='Search your moments'
+										placeholder='Search your flows'
 										className='text-gray-800 w-full font-cabin focus:ring-0 outline-none'
 									/>
 								</div>
@@ -298,7 +294,7 @@ const Flows = () => {
 				open={confirmDialogOpen}
 				onOpenChange={setConfirmDialogOpen}
 				title='Delete this flow?'
-				description='This action cannot be undone.'
+				description='Deleting this flow will permanently remove it along with all its moments. This action cannot be undone.'
 				confirmText='Delete'
 				onConfirm={confirmDelete}
 			/>

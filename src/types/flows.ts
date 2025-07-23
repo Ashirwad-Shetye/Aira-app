@@ -8,4 +8,6 @@ export interface Flow {
 	created_at: string;
 	cover_photo_url?: string
 	cover_photo_blurhash?: string
+	moment_count?: number;
+  	last_activity?: string | null;
 }
