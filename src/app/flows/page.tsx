@@ -26,7 +26,7 @@ const Flows = () => {
 	const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 	const [selectedFlow, setSelectedFlow] = useState<Flow | null>(null);
 	const [ deletingIds, setDeletingIds ] = useState<Set<string>>( new Set() );
-	const [sortByValue, setSortByValue] = useState("last edited");
+	const [ sortByValue, setSortByValue ] = useState( "last edited" );
 
 	const tags = [
 		"mindfulness",
@@ -61,60 +61,83 @@ const Flows = () => {
 		"random",
 	];
 
-	useEffect(() => {
-		if (status !== "authenticated" || !session?.user?.id) return;
+	const fetchFlows = async() => {
+		setIsLoading(true);
+		setError(null);
 
-		async function fetchFlows() {
-			setIsLoading(true);
-			setError(null);
+		try {
+			let column = "last_activity";
+			let ascending = false;
 
-			try {
-				let column = "last_activity";
-				let ascending = false;
-
-				switch (sortByValue) {
-					case "last created":
-						column = "created_at";
-						ascending = false;
-						break;
-					case "last edited":
-						column = "last_activity";
-						ascending = false;
-						break;
-					case "oldest created":
-						column = "created_at";
-						ascending = true;
-						break;
-					case "oldest edited":
-						column = "last_activity";
-						ascending = true;
-						break;
-					default:
-						column = "last_activity";
-						ascending = false;
-				}
-
-				const { data, error } = await supabase
-					.rpc("get_flows_with_moment_data", {
-						user_id_input: session?.user.id,
-					})
-					.order(column, { ascending });
-
-				if (error) {
-					throw new Error(`Error fetching flows: ${error.message}`);
-				}
-
-				setFlows(data);
-			} catch (error: any) {
-				console.error(error);
-				setError(error.message);
-			} finally {
-				setIsLoading(false);
+			switch (sortByValue) {
+				case "last created":
+					column = "created_at";
+					ascending = false;
+					break;
+				case "last edited":
+					column = "last_activity";
+					ascending = false;
+					break;
+				case "oldest created":
+					column = "created_at";
+					ascending = true;
+					break;
+				case "oldest edited":
+					column = "last_activity";
+					ascending = true;
+					break;
+				default:
+					column = "last_activity";
+					ascending = false;
 			}
-		}
 
-		fetchFlows();
-	}, [session, status, sortByValue]);
+			const { data, error } = await supabase
+				.rpc("get_flows_with_moment_data", {
+					user_id_input: session?.user.id,
+				})
+				.order(column, { ascending });
+
+			if (error) {
+				throw new Error(`Error fetching flows: ${error.message}`);
+			}
+
+			setFlows(data);
+		} catch (error: any) {
+			console.error(error);
+			setError(error.message);
+		} finally {
+			setIsLoading(false);
+		}
+	}
+
+	const hasFetchedRef = useRef(false);
+
+	// 1️⃣ Initial fetch — run only once when session is ready
+	useEffect(() => {
+		if (
+			status === "authenticated" &&
+			session?.user?.id &&
+			!hasFetchedRef.current
+		) {
+			const fetchData = async () => {
+				try {
+					await fetchFlows();
+				} catch (error) {
+					console.error(error);
+				} finally {
+					hasFetchedRef.current = true;
+				}
+			};
+			fetchData();
+		}
+	}, [status, session]);
+
+	// 2️⃣ Refetch on sort change — only after initial fetch
+	useEffect(() => {
+		if (hasFetchedRef.current) {
+			fetchFlows();
+		}
+	}, [sortByValue]);
 
 	const handleEditFlow = (flow: Flow) => {
 		setEditFlow(flow);

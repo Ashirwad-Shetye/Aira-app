@@ -23,11 +23,13 @@ export default function CoverPhotoDialog({
 	onOpenChange,
 	flowId,
 	onCoverUpdated,
+	bannerExist= true
 }: {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	flowId: string;
-	onCoverUpdated: (url: string, blurhash: string) => void;
+		onCoverUpdated: ( url: string, blurhash: string ) => void;
+	bannerExist?: boolean
     } ) {
     const [isSaving, setIsSaving] = useState<boolean>(false);
 	const {
@@ -226,13 +228,20 @@ export default function CoverPhotoDialog({
 							<Icons.loader className='h-5 w-5 animate-spin text-muted-foreground' />
 						</div>
 					) : (
-						<div className='flex items-center justify-between w-full'>
-							<Button
-								variant='ghost'
-								onClick={handleReset}
-							>
-								Remove banner
-							</Button>
+						<div
+							className={`flex items-center ${
+								bannerExist ? "justify-between" : "justify-end"
+							} w-full`}
+						>
+							{bannerExist && (
+								<Button
+									variant='ghost'
+									onClick={handleReset}
+								>
+									Remove cover
+								</Button>
+							)}
+
 							<div className='flex items-center gap-5'>
 								<Button
 									variant='ghost'

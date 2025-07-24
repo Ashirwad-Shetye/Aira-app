@@ -328,18 +328,20 @@ export default function FlowIdPage() {
 										/>
 									</div>
 								) : (
-									<div className='relative w-full aspect-[4/1] rounded-lg group overflow-hidden bg-muted/50 mb-5'>
+									<div className='relative w-full mb-5'>
 										<Button
 											variant='secondary'
-											className='absolute top-5 right-5 z-50 rounded-full transition-all duration-300'
+											className='flex items-center gap-1'
 											onClick={() => setCoverDialogOpen(true)}
 										>
-											<Icons.pencil className='shrink-0' />
+											<Icons.image className='shrink-0' />
+											<p>Add cover</p>
 										</Button>
 										<CoverPhotoDialog
 											open={coverDialogOpen}
 											onOpenChange={setCoverDialogOpen}
 											flowId={flow.id}
+											bannerExist={false}
 											onCoverUpdated={(url, blurhash) => {
 												setFlow((prev) =>
 													prev

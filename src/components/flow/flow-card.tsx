@@ -111,11 +111,13 @@ const FlowCard = ( { flow, latestFlow, onEdit, onDelete }: Props ) => {
 					)}
 					<div className='flex items-center gap-3 pt-2'>
 						{latestFlow && (
-							<p className='text-sm bg-amber-600 text-white px-2 py-0.5 rounded-full w-fit'>
+							<p className='text-xs bg-amber-600 text-white px-2 py-0.5 rounded w-fit'>
 								Latest
 							</p>
 						)}
-						<p className='text-gray-500'>{formatDate(flow.created_at)}</p>
+						<p className='text-sm text-gray-500'>
+							{formatDate(flow.created_at)}
+						</p>
 					</div>
 					<h1 className='text-md font-semibold text-wrap line-clamp-3 truncate'>
 						{flow.title}

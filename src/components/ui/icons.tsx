@@ -19,7 +19,12 @@ import { LuWind as flow } from "react-icons/lu";
 import { GoPlus as add } from "react-icons/go";
 import { RxDotsHorizontal as menuDots } from "react-icons/rx";
 import { AiOutlineLoading3Quarters as loader } from "react-icons/ai";
-import { TbArrowsSort as sort} from "react-icons/tb";
+import { TbArrowsSort as sort } from "react-icons/tb";
+import dynamic from "next/dynamic";
+const image = dynamic(
+  () => import("react-icons/fa").then(m => m.FaImage),
+  { ssr: false }
+);
 
 const Icons = {
 	signout,
@@ -38,7 +43,8 @@ const Icons = {
 	trash,
 	edit,
 	pencil,
-	sort
+	sort,
+	image
 };
 
 export default Icons;
