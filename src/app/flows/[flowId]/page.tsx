@@ -263,9 +263,9 @@ export default function FlowIdPage() {
 					<div className='flex flex-col gap-3 relative w-full'>
 						{flowLoading ? (
 							<>
-								<div className='h-40 w-full bg-gray-100 animate-pulse rounded' />
-								<div className='h-8 w-40 bg-gray-100 animate-pulse rounded' />
-								<div className='h-40 w-full bg-gray-100 animate-pulse rounded' />
+								<div className='h-40 w-full bg-gray-100 animate-pulse' />
+								<div className='h-8 w-40 bg-gray-100 animate-pulse' />
+								<div className='h-40 w-full bg-gray-100 animate-pulse' />
 							</>
 						) : !flow ? (
 							<div className='flex items-center justify-center flex-1'>
@@ -276,7 +276,7 @@ export default function FlowIdPage() {
 						) : (
 							<div className='flex flex-col gap-3 relative w-full'>
 								{flow.cover_photo_url ? (
-									<div className='relative w-full aspect-[4/1] rounded-lg group overflow-hidden bg-muted/50 mb-5'>
+									<div className='relative w-full aspect-[4/1] group overflow-hidden bg-muted/50 mb-5'>
 										{flow.cover_photo_blurhash && (
 											<BlurhashCanvas
 												hash={flow.cover_photo_blurhash}
@@ -305,7 +305,7 @@ export default function FlowIdPage() {
 										/>
 										<Button
 											variant='secondary'
-											className='hidden group-hover:block absolute top-5 right-5 z-50 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300'
+											className='hidden group-hover:block absolute top-5 right-5 z-50 opacity-0 group-hover:opacity-100 transition-all duration-300'
 											onClick={() => setCoverDialogOpen(true)}
 										>
 											<Icons.pencil className='shrink-0' />
@@ -356,11 +356,11 @@ export default function FlowIdPage() {
 										/>
 									</div>
 								)}
-								<h1 className='font-figtree font-semibold text-2xl'>
+								<h1 className='font-libre font-semibold text-2xl'>
 									{flow.title || "Untitled Flow"}
 								</h1>
 								{flow?.bio ? (
-									<p className='font-figtree'>{flow.bio}</p>
+									<p className='text-muted-foreground'>{flow.bio}</p>
 								) : (
 									<p className='text-muted-foreground'>Add bio</p>
 								)}
@@ -381,13 +381,16 @@ export default function FlowIdPage() {
 								<input
 									type='text'
 									placeholder='Search your moments'
-									className='text-gray-800 w-full font-cabin focus:ring-0 outline-none'
+									className='text-gray-800 w-full focus:ring-0 outline-none'
 								/>
 							</div>
 						</div>
-						<div className="bg-white w-full flex items-center justify-end">
+						<div className='bg-white w-full flex items-center justify-end'>
 							<div>
-								<SortByComboBox value={sortByValue} setValue={setSortByValue} />
+								<SortByComboBox
+									value={sortByValue}
+									setValue={setSortByValue}
+								/>
 							</div>
 						</div>
 						<div className='h-6 w-full bg-gradient-to-t from-transparent via-white/90 to-white' />
@@ -398,7 +401,7 @@ export default function FlowIdPage() {
 							{Array.from({ length: 6 }).map((_, i) => (
 								<div
 									key={i}
-									className='h-32 bg-gray-100 animate-pulse rounded-xl'
+									className='h-32 bg-gray-100 animate-pulse'
 								/>
 							))}
 						</div>

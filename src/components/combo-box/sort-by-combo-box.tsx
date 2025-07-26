@@ -78,7 +78,7 @@ export function SortByComboBox( {
 						className='h-9'
 					/>
 					<CommandList>
-						<CommandEmpty>No framework found.</CommandEmpty>
+						<CommandEmpty>No match found.</CommandEmpty>
 						<CommandGroup>
 							{sortByVals.map((sortByVal) => (
 								<CommandItem
@@ -88,6 +88,7 @@ export function SortByComboBox( {
 										setValue(currentValue === value ? "" : currentValue);
 										setOpen(false);
 									}}
+									className="text-xs"
 								>
 									{sortByVal.label}
 									<Check

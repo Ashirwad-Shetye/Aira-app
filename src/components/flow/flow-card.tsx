@@ -65,11 +65,11 @@ const FlowCard = ( { flow, latestFlow, onEdit, onDelete }: Props ) => {
     return (
 			<div
 				onClick={() => handleOpenFlow(flow.id)}
-				className='border rounded-xl p-4 bg-white flex flex-col gap-3 hover:shadow justify-between transition-all duration-300 ease-in-out transform'
+				className='p-5 bg-[#fbfbfb] flex flex-col gap-5 hover:shadow justify-between transition-all duration-300 ease-in-out transform'
 			>
-				<div className='flex flex-col gap-1 relative cursor-default'>
-					{flow.cover_photo_url ? (
-						<div className='relative w-full aspect-[4/1] rounded-lg group overflow-hidden bg-muted/50'>
+				<div className='flex flex-col gap-5 relative cursor-default'>
+					{/* {flow.cover_photo_url ? (
+						<div className='relative w-full aspect-[4/1] group overflow-hidden bg-muted/50'>
 							{flow.cover_photo_blurhash && (
 								<BlurhashCanvas
 									hash={flow.cover_photo_blurhash}
@@ -98,7 +98,7 @@ const FlowCard = ( { flow, latestFlow, onEdit, onDelete }: Props ) => {
 							/>
 						</div>
 					) : (
-						<div className='relative w-full aspect-[4/1] rounded-lg group overflow-hidden bg-muted/50'>
+						<div className='relative w-full aspect-[4/1] group overflow-hidden bg-muted/50'>
 							{flow.cover_photo_blurhash && (
 								<BlurhashCanvas
 									hash={flow.cover_photo_blurhash}
@@ -108,10 +108,10 @@ const FlowCard = ( { flow, latestFlow, onEdit, onDelete }: Props ) => {
 								/>
 							)}
 						</div>
-					)}
-					<div className='flex items-center gap-3 pt-2'>
+					)} */}
+					<div className='flex items-center gap-3'>
 						{latestFlow && (
-							<p className='text-xs bg-amber-600 text-white px-2 py-0.5 rounded w-fit'>
+							<p className='text-xs bg-amber-600 text-white px-2 py-0.5 w-fit'>
 								Latest
 							</p>
 						)}
@@ -119,16 +119,16 @@ const FlowCard = ( { flow, latestFlow, onEdit, onDelete }: Props ) => {
 							{formatDate(flow.created_at)}
 						</p>
 					</div>
-					<h1 className='text-md font-semibold text-wrap line-clamp-3 truncate'>
+					<h1 className='text-lg font-semibold font-libre text-wrap line-clamp-3 truncate'>
 						{flow.title}
 					</h1>
 					{flow.bio && (
-						<p className='text-sm text-muted-foreground line-clamp-3 mt-1'>
+						<p className='text-sm text-muted-foreground line-clamp-3'>
 							{flow.bio}
 						</p>
 					)}
 				</div>
-				<div className='flex flex-col gap-2'>
+				<div className='flex flex-col gap-5'>
 					<div className='flex items-center justify-between text-sm cursor-default'>
 						<p className='text-xs text-gray-400'>
 							Last activity:{" "}
@@ -137,7 +137,7 @@ const FlowCard = ( { flow, latestFlow, onEdit, onDelete }: Props ) => {
 					</div>
 					<div className='flex items-center gap-5 justify-between w-full'>
 						<div className='text-sm'>
-							<p className='text-muted-foreground bg-muted px-2 py-0.5 rounded cursor-default'>
+							<p className='text-muted-foreground bg-gray-100 px-2 py-0.5 cursor-default'>
 								{flow.moment_count ?? 0}{" "}
 								{flow.moment_count === 1 ? "moment" : "moments"}
 							</p>
@@ -151,7 +151,7 @@ const FlowCard = ( { flow, latestFlow, onEdit, onDelete }: Props ) => {
 											e.stopPropagation();
 											handleOpenFlow(flow.id);
 										}}
-										className='cursor-pointer text-gray-500 h-6 w-6 flex items-center justify-center rounded hover:bg-gray-100 duration-150 active:scale-95'
+										className='cursor-pointer text-gray-500 h-6 w-6 flex items-center justify-center hover:bg-gray-100 duration-150 active:scale-95'
 									>
 										<Icons.moment />
 									</button>
@@ -171,7 +171,7 @@ const FlowCard = ( { flow, latestFlow, onEdit, onDelete }: Props ) => {
 											e.stopPropagation();
 											handleCreateNewMoment(flow.id);
 										}}
-										className='cursor-pointer text-gray-500 h-6 w-6 flex items-center justify-center rounded hover:bg-gray-100 duration-150 active:scale-95'
+										className='cursor-pointer text-gray-500 h-6 w-6 flex items-center justify-center hover:bg-gray-100 duration-150 active:scale-95'
 									>
 										<Icons.add />
 									</button>
@@ -190,7 +190,7 @@ const FlowCard = ( { flow, latestFlow, onEdit, onDelete }: Props ) => {
 											<TooltipTrigger asChild>
 												<div
 													onClick={(e) => e.stopPropagation()}
-													className='cursor-pointer text-gray-500 h-6 w-6 flex items-center justify-center rounded hover:bg-gray-100 duration-150 active:scale-95'
+													className='cursor-pointer text-gray-500 h-6 w-6 flex items-center justify-center hover:bg-gray-100 duration-150 active:scale-95'
 												>
 													<Icons.menuDots />
 												</div>
@@ -243,7 +243,7 @@ const FlowCard = ( { flow, latestFlow, onEdit, onDelete }: Props ) => {
 														e.stopPropagation();
 														onDelete(flow.id);
 													}}
-													className='cursor-pointer text-gray-500 h-6 w-6 flex items-center justify-center rounded hover:bg-gray-100 hover:text-red-400 duration-150 active:scale-95'
+													className='cursor-pointer text-gray-500 h-6 w-6 flex items-center justify-center hover:bg-gray-100 hover:text-red-400 duration-150 active:scale-95'
 												>
 													<Icons.trash />
 												</button>

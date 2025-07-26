@@ -247,7 +247,7 @@ const Flows = () => {
 				className='flex-1 flex flex-col gap-10 pb-10 min-h-screen overflow-y-auto p-5'
 			>
 				<div className='flex flex-col sm:w-full md:w-[70%] max-w-7xl mx-auto min-h-0 px-5'>
-					<h1 className='font-pt-sans text-2xl'>Your Flows</h1>
+					<h1 className='font-libre font-semibold text-2xl'>Your Flows</h1>
 					<div className='flex-1 flex flex-col'>
 						<div className='sticky -top-5 z-40 w-full'>
 							<div className='h-6 w-full bg-white' />
@@ -283,7 +283,7 @@ const Flows = () => {
 								children={
 									<button
 										type='button'
-										className='px-10 h-20 group cursor-pointer select-none font-pt-sans text-lg font-semibold rounded-lg text-white bg-gradient-to-br from-[#DFEDFF] via-[#B2CEF3] to-[#DFEDFF] flex items-center justify-center'
+										className='px-10 h-20 group cursor-pointer select-none font-pt-sans text-lg font-semibold text-white bg-gradient-to-br from-[#DFEDFF] via-[#B2CEF3] to-[#DFEDFF] flex items-center justify-center'
 									>
 										<div className='group-hover:scale-105 gap-2 duration-200 group-active:scale-95 flex items-center justify-center'>
 											<Icons.flow />
@@ -294,7 +294,7 @@ const Flows = () => {
 							/>
 							<button
 								type='button'
-								className='px-10 h-20 group cursor-pointer select-none font-pt-sans text-lg font-semibold rounded-lg text-white bg-gradient-to-br from-[#E8F2D9] via-[#b7da81] to-[#E8F2D9] flex items-center justify-center'
+								className='px-10 h-20 group cursor-pointer select-none font-pt-sans text-lg font-semibold text-white bg-gradient-to-br from-[#E8F2D9] via-[#b7da81] to-[#E8F2D9] flex items-center justify-center'
 								aria-label='Create new moment in flow'
 							>
 								<div className='group-hover:scale-105 gap-2 duration-200 group-active:scale-95 flex items-center justify-center'>
@@ -320,7 +320,7 @@ const Flows = () => {
 								{Array.from({ length: 4 }).map((_, i) => (
 									<div
 										key={i}
-										className='h-80 bg-gray-100 animate-pulse rounded-xl'
+										className='h-80 bg-gray-100 animate-pulse'
 									/>
 								))}
 							</div>
@@ -335,7 +335,9 @@ const Flows = () => {
 										<FlowCard
 											key={`${flow.id}_${idx}`}
 											flow={flow}
-											latestFlow={flow.last_activity === latestActivityTimestamp}
+											latestFlow={
+												flow.last_activity === latestActivityTimestamp
+											}
 											onEdit={handleEditFlow}
 											onDelete={handleDeleteFlow}
 										/>

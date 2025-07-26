@@ -63,7 +63,7 @@ const MomentCard = ({
 		<div
 			onClick={() => handleOpenMoment(moment.id)}
 			className={clsx(
-				"border rounded-xl p-4 bg-white flex flex-col hover:shadow justify-between transition-all duration-300 ease-in-out transform",
+				"p-5 bg-[#fbfbfb] flex flex-col hover:shadow justify-between transition-all duration-300 ease-in-out transform",
 				{
 					"opacity-0 scale-95": (isNew && !animateIn) || animateOut,
 					"opacity-100 scale-100": isNew && animateIn,
@@ -71,9 +71,9 @@ const MomentCard = ({
 			)}
 		>
 			{/* Header */}
-			<div className='flex flex-col gap-1 relative'>
+			<div className='flex flex-col gap-5 relative'>
 				<p className='text-sm text-gray-500'>{formatDate(moment.created_at)}</p>
-				<h2 className='text-md font-semibold text-wrap line-clamp-3 truncate'>
+				<h2 className='text-lg font-semibold font-libre text-wrap line-clamp-3 truncate'>
 					{moment.title || "Untitled Moment"}
 				</h2>
 				{moment.snippet && (
@@ -84,7 +84,7 @@ const MomentCard = ({
 			</div>
 
 			{/* Footer */}
-			<div className='flex items-center gap-2 justify-between mt-3'>
+			<div className='flex items-center gap-5 justify-between mt-3'>
 				{moment.updated_at && (
 					<p className='text-xs text-gray-400 truncate'>
 						Last edited: {formatDate(moment.updated_at)}
@@ -100,7 +100,7 @@ const MomentCard = ({
 									e.stopPropagation();
 									handleOpenMoment(moment.id);
 								}}
-								className='cursor-pointer text-gray-500 h-6 w-6 flex items-center justify-center rounded hover:bg-gray-100 duration-150 active:scale-95'
+								className='cursor-pointer text-gray-500 h-6 w-6 flex items-center justify-center hover:bg-gray-100 duration-150 active:scale-95'
 							>
 								<Icons.edit />
 							</button>
@@ -119,7 +119,7 @@ const MomentCard = ({
 								<TooltipTrigger asChild>
 									<div
 										onClick={(e) => e.stopPropagation()}
-										className='cursor-pointer text-gray-500 h-6 w-6 flex items-center justify-center rounded hover:bg-gray-100 duration-150 active:scale-95'
+										className='cursor-pointer text-gray-500 h-6 w-6 flex items-center justify-center hover:bg-gray-100 duration-150 active:scale-95'
 									>
 										<Icons.menuDots />
 									</div>
