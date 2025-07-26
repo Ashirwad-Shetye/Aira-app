@@ -123,23 +123,23 @@ const FlowCard = ( { flow, latestFlow, onEdit, onDelete }: Props ) => {
 						{flow.title}
 					</h1>
 					{flow.bio && (
-						<p className='text-sm text-muted-foreground line-clamp-3'>
+						<p className='text-sm text-muted-foreground line-clamp-3 mt-1'>
 							{flow.bio}
 						</p>
 					)}
 				</div>
 				<div className='flex flex-col gap-5'>
-					<div className='flex items-center justify-between text-sm cursor-default'>
-						<p className='text-xs text-gray-400'>
-							Last activity:{" "}
-							{flow.last_activity ? formatDate(flow.last_activity) : "—"}
+					<div className='text-sm'>
+						<p className='text-muted-foreground bg-gray-100 px-2 py-0.5 cursor-default w-fit'>
+							{flow.moment_count ?? 0}{" "}
+							{flow.moment_count === 1 ? "moment" : "moments"}
 						</p>
 					</div>
 					<div className='flex items-center gap-5 justify-between w-full'>
-						<div className='text-sm'>
-							<p className='text-muted-foreground bg-gray-100 px-2 py-0.5 cursor-default'>
-								{flow.moment_count ?? 0}{" "}
-								{flow.moment_count === 1 ? "moment" : "moments"}
+						<div className='flex items-center justify-between text-sm cursor-default'>
+							<p className='text-xs text-gray-400'>
+								Last activity:{" "}
+								{flow.last_activity ? formatDate(flow.last_activity) : "—"}
 							</p>
 						</div>
 						<div className='flex items-center gap-2'>

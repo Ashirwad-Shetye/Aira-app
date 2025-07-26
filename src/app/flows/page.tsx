@@ -14,6 +14,7 @@ import HeaderNavbar from "@/components/header-navbar/header-navbar";
 import { ConfirmDialog } from "@/components/custom-alert-dialog/confirm-dialog";
 import { toast } from "sonner";
 import { SortByComboBox } from "@/components/combo-box/sort-by-combo-box";
+import { Button } from "@/components/ui/button";
 
 const Flows = () => {
 	const [flows, setFlows] = useState<Flow[]>([]);
@@ -263,49 +264,29 @@ const Flows = () => {
 							</div>
 							<div className='h-6 w-full bg-white' />
 						</div>
-						{error && (
-							<div
-								aria-live='polite'
-								className='text-destructive'
-							>
-								{error}
-							</div>
-						)}
-						<div className='flex gap-5 pb-5'>
-							<NewFlowDialog
-								open={dialogOpen}
-								onOpenChange={(open) => {
-									setDialogOpen(open);
-									if (!open) setEditFlow(null);
-								}}
-								flow={editFlow ?? undefined}
-								onSave={editFlow ? handleSaveFlow : undefined}
-								children={
-									<button
-										type='button'
-										className='px-10 h-20 group cursor-pointer select-none font-pt-sans text-lg font-semibold text-white bg-gradient-to-br from-[#DFEDFF] via-[#B2CEF3] to-[#DFEDFF] flex items-center justify-center'
-									>
-										<div className='group-hover:scale-105 gap-2 duration-200 group-active:scale-95 flex items-center justify-center'>
-											<Icons.flow />
-											<h1>{editFlow ? "Edit flow" : "Start a new flow"}</h1>
-										</div>
-									</button>
-								}
-							/>
-							<button
-								type='button'
-								className='px-10 h-20 group cursor-pointer select-none font-pt-sans text-lg font-semibold text-white bg-gradient-to-br from-[#E8F2D9] via-[#b7da81] to-[#E8F2D9] flex items-center justify-center'
-								aria-label='Create new moment in flow'
-							>
-								<div className='group-hover:scale-105 gap-2 duration-200 group-active:scale-95 flex items-center justify-center'>
-									<Icons.moment aria-hidden='true' />
-									<h1>New moment in flow</h1>
-								</div>
-							</button>
-						</div>
 						<div className='sticky top-14 z-40 w-full'>
 							<TagsBar tags={tags} />
-							<div className='bg-white w-full flex items-center py-5 justify-end'>
+							<div className='bg-white w-full flex items-center py-5 justify-between'>
+								<NewFlowDialog
+									open={dialogOpen}
+									onOpenChange={(open) => {
+										setDialogOpen(open);
+										if (!open) setEditFlow(null);
+									}}
+									flow={editFlow ?? undefined}
+									onSave={editFlow ? handleSaveFlow : undefined}
+									children={
+										<Button
+											variant="primary"
+											className='group cursor-pointer select-none flex items-center justify-center'
+										>
+											<div className='gap-2 flex items-center justify-center'>
+												<Icons.flow />
+												<h1>{editFlow ? "Edit flow" : "Start a new flow"}</h1>
+											</div>
+										</Button>
+									}
+								/>
 								<div>
 									<SortByComboBox
 										value={sortByValue}

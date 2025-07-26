@@ -198,15 +198,15 @@ export default function CoverPhotoDialog({
 						{({ getRootProps, getInputProps }) => (
 							<div
 								{...getRootProps()}
-								className='border rounded-lg p-6 text-center cursor-pointer bg-gray-50'
+								className='border px-6 py-10 border-dashed text-center cursor-pointer bg-gray-50'
 							>
 								<input {...getInputProps()} />
-								<p>Click or drag a photo here (max 2MB)</p>
+								<p className="text-muted-foreground">Click or drag a photo here (max 2MB)</p>
 							</div>
 						)}
 					</Dropzone>
 				) : (
-					<div className='relative w-full h-64 bg-muted rounded-md overflow-hidden'>
+					<div className='relative w-full h-64 bg-muted overflow-hidden'>
 						<Cropper
 							image={imageSrc}
 							crop={crop}
