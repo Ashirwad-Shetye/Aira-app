@@ -247,7 +247,7 @@ const Flows = () => {
 				ref={scrollContainerRef}
 				className='flex-1 flex flex-col gap-10 pb-10 min-h-screen overflow-y-auto p-5'
 			>
-				<div className='flex flex-col sm:w-full md:w-[70%] max-w-7xl mx-auto min-h-0 px-5'>
+				<div className='flex flex-col sm:w-full md:w-[80%] max-w-7xl mx-auto min-h-0 px-5'>
 					<h1 className='font-libre font-semibold text-2xl'>Your Flows</h1>
 					<div className='flex-1 flex flex-col'>
 						<div className='sticky -top-5 z-40 w-full'>

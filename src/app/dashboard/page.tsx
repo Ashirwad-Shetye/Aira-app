@@ -24,29 +24,13 @@ const DashboardPage = () => {
 				ref={scrollContainerRef}
 				className='flex-1 flex flex-col gap-10 pb-10 relative min-h-0 overflow-y-auto p-5 bg-[#fbfbfb]'
 			>
-				<div className='flex-1 flex flex-col w-full min-h-0 gap-5 relative overflow-y-auto'>
-					<div>
-						<Greetings
-							userName={userFirstname}
-							align='left'
-						/>
-					</div>
-					<div className='flex flex-1 flex-col relative pb-1'>
-						<div className='flex-1 grid grid-cols-1 auto-rows-fr sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 grid-rows-2 gap-3 2xl:overflow-hidden'>
-							{/* flow card */}
-							<div className='border border-gray-300 bg-white rounded-xl sm:h-[20rem] h-[25rem] md:h-auto md:min-h-[15rem] hover:shadow duration-200 col-span-1 md:col-span-2 relative flex flex-col overflow-hidden'>
-								<AllFlowCard />
-							</div>
-							{/* latest moments card */}
-							<div className='border border-gray-300 bg-white rounded-xl sm:h-[20rem] h-[25rem] md:h-auto md:min-h-[15rem] hover:shadow duration-200 md:row-span-2 flex flex-col overflow-hidden'>
-								<LatestMomentsCard />
-							</div>
-							<div className='border border-gray-300 bg-white rounded-xl h-[20rem] md:h-auto hover:shadow duration-200 col-span-1'></div>
-							<div className='border border-gray-300 bg-white rounded-xl hover:shadow duration-200'></div>
-							<div className='border border-gray-300 bg-white rounded-xl hover:shadow duration-200'></div>
-							<div className='border border-gray-300 bg-white rounded-xl hover:shadow duration-200'></div>
-							<div className='border border-gray-300 bg-white rounded-xl hover:shadow duration-200 col-span-2'></div>
-						</div>
+				<div className='flex flex-col sm:w-full md:w-[80%] max-w-7xl mx-auto min-h-0 px-5'>
+					<Greetings
+						userName={userFirstname}
+						align='left'
+					/>
+					<div className='flex-1 flex flex-col py-10'>
+
 					</div>
 				</div>
 			</div>

@@ -153,7 +153,7 @@ export default function MomentEditorPage() {
 						isLoading={isFlowLoading || isMomentLoading}
 					/>
 				</div>
-				<div className='flex-1 flex flex-col sm:w-full md:w-[70%] max-w-7xl mx-auto min-h-0 px-5'>
+				<div className='flex-1 flex flex-col sm:w-full md:w-[80%] max-w-7xl mx-auto min-h-0 px-5'>
 					{isMomentLoading ? (
 						<>
 							<div className='h-10 w-2/3 bg-gray-100 rounded mb-4 animate-pulse' />
