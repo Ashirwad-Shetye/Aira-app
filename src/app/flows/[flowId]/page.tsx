@@ -22,6 +22,7 @@ import CoverPhotoDialog from "@/components/cover-photo-dialog.tsx/cover-photo-di
 import BlurhashCanvas from "@/lib/blurhash-utils";
 import Image from "next/image";
 import { SortByComboBox } from "@/components/combo-box/sort-by-combo-box";
+import { NewFlowDialog } from "@/components/new-flow-dialog/new-flow-dialog";
 
 export default function FlowIdPage() {
 	const { flowId } = useParams();
@@ -40,7 +41,8 @@ export default function FlowIdPage() {
 	const [selectedMoment, setSelectedMoment] = useState<Moment | null>(null);
 	const [ deletingIds, setDeletingIds ] = useState<Set<string>>( new Set() );
 	const [ coverDialogOpen, setCoverDialogOpen ] = useState<boolean>( false )
-	const [sortByValue, setSortByValue] = useState("last edited");
+	const [ sortByValue, setSortByValue ] = useState( "last edited" );
+	const [dialogOpen, setDialogOpen] = useState(false);
 
 	useEffect(() => {
 		if (!flowId || typeof flowId !== "string") return;
@@ -226,6 +228,45 @@ export default function FlowIdPage() {
 		toast.success("Moment duplicated successfully.");
 	};
 
+	const handleSaveFlow = async(data: {
+		id?: string;
+		title: string;
+		bio?: string;
+	}) => {
+		if (!data.id) return;
+		setFlowLoading(true);
+		setError(null);
+		const { error } = await supabase
+			.from("flows")
+			.update({ title: data.title, bio: data.bio })
+			.eq("id", data.id);
+		if (error) {
+			setError(error.message);
+			setFlowLoading(false);
+			return;
+		} else {
+			setFlow((prev: any) => {
+				if (!prev) return null;
+				return {
+					...prev,
+					title: data.title,
+					bio: data.bio ?? prev.bio ?? null,
+				};
+			});
+		}
+		setDialogOpen(false);
+		setFlowLoading(false);
+	}
+
+	const isLatestMoment = (moment: Moment) => {
+		if (moments.length === 0) return false;
+		const latestTimestamp = moments.reduce((max, m) => {
+			const timestamp = new Date(m.updated_at).getTime();
+			return timestamp > max ? timestamp : max;
+		}, -Infinity);
+		return new Date(moment.updated_at).getTime() === latestTimestamp;
+	};
+
 	if (error) {
 		return (
 			<div className='p-5 flex flex-col items-center justify-center text-red-500 text-center'>
@@ -274,7 +315,7 @@ export default function FlowIdPage() {
 								</h1>
 							</div>
 						) : (
-							<div className='flex flex-col gap-3 relative w-full'>
+							<div className='flex flex-col gap-5 relative w-full'>
 								{flow.cover_photo_url ? (
 									<div className='relative w-full aspect-[4/1] group overflow-hidden bg-muted/50 mb-5'>
 										{flow.cover_photo_blurhash && (
@@ -356,18 +397,34 @@ export default function FlowIdPage() {
 										/>
 									</div>
 								)}
-								<h1 className='font-libre font-semibold text-2xl'>
-									{flow.title || "Untitled Flow"}
-								</h1>
-								{flow?.bio ? (
-									<p className='text-muted-foreground'>{flow.bio}</p>
-								) : (
-									<p className='text-muted-foreground'>Add bio</p>
-								)}
-								<div>
-									<p className='text-gray-500'>
-										Created on: {formatDate(flow.created_at)}
-									</p>
+								<div className='flex flex-col group gap-5 relative'>
+									<NewFlowDialog
+										flow={flow}
+										open={dialogOpen}
+										onOpenChange={(open) => setDialogOpen(open)}
+										onSave={handleSaveFlow}
+										clearOnClose={false}
+									>
+										<Button
+											variant='secondary'
+											className='hidden group-hover:block absolute top-0 right-5 z-50 opacity-0 group-hover:opacity-100 transition-all duration-300'
+										>
+											<Icons.pencil className='shrink-0' />
+										</Button>
+									</NewFlowDialog>
+									<h1 className='font-libre font-semibold text-2xl'>
+										{flow.title || "Untitled Flow"}
+									</h1>
+									{flow?.bio ? (
+										<p className='text-muted-foreground'>{flow.bio}</p>
+									) : (
+										<p className='text-muted-foreground'>Add bio</p>
+									)}
+									<div>
+										<p className='text-gray-500 text-xs'>
+											Created on: {formatDate(flow.created_at)}
+										</p>
+									</div>
 								</div>
 							</div>
 						)}
@@ -398,10 +455,10 @@ export default function FlowIdPage() {
 
 					{flow && momentsLoading ? (
 						<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2'>
-							{Array.from({ length: 6 }).map((_, i) => (
+							{Array.from({ length: 3 }).map((_, i) => (
 								<div
 									key={i}
-									className='h-32 bg-gray-100 animate-pulse'
+									className='h-80 shrink-0 bg-gray-100 animate-pulse'
 								/>
 							))}
 						</div>
@@ -420,7 +477,8 @@ export default function FlowIdPage() {
 									onDelete={handleDelete}
 									onDuplicate={handleDuplicate}
 									isDeleting={deletingIds.has(moment.id)}
-									isNew={moment.id.startsWith("temp_")}
+									isNew={moment.id.startsWith( "temp_" )}
+									latestMoment={isLatestMoment(moment)}
 								/>
 							))}
 						</div>

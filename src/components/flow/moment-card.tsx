@@ -23,7 +23,8 @@ type Props = {
 	isDeleting?: boolean;
 	onRename?: (moment: Moment) => void;
 	onDuplicate?: (moment: Moment) => void;
-	onDelete?: (moment: Moment) => void;
+	onDelete?: ( moment: Moment ) => void;
+	latestMoment:boolean
 };
 
 const MomentCard = ({
@@ -34,6 +35,7 @@ const MomentCard = ({
 	onRename,
 	onDuplicate,
 	onDelete,
+	latestMoment,
 }: Props) => {
 	const router = useRouter();
 	const flowId = flow?.id;
@@ -72,7 +74,16 @@ const MomentCard = ({
 		>
 			{/* Header */}
 			<div className='flex flex-col gap-5 relative'>
-				<p className='text-sm text-gray-500'>{formatDate(moment.created_at)}</p>
+				<div className='flex items-center gap-3'>
+					{latestMoment && (
+						<p className='text-xs bg-amber-600 text-white px-2 py-0.5 w-fit'>
+							Latest
+						</p>
+					)}
+					<p className='text-sm text-gray-500'>
+						{formatDate(moment.created_at)}
+					</p>
+				</div>
 				<h2 className='text-lg font-semibold font-libre text-wrap line-clamp-3 truncate'>
 					{moment.title || "Untitled Moment"}
 				</h2>

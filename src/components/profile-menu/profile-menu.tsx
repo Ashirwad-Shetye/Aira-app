@@ -27,7 +27,6 @@ const ProfileMenu = () => {
 	}
 
 	const userImage = session?.user?.image ?? ""
-	console.log(userImage);
 	const userName = session?.user?.name || "NA";
 	const initials = userName
 		.split(" ")

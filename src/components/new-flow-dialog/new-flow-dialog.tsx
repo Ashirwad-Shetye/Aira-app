@@ -20,11 +20,12 @@ export interface NewFlowDialogProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   onSave?: ( data: { id?: string; title: string; bio?: string } ) => void;
-  children?: ReactElement; // <-- Make children optional
+  children?: ReactElement;
+  clearOnClose?: boolean
 }
 
 export function NewFlowDialog(props: NewFlowDialogProps = {}) {
-  const { flow, open, onOpenChange, onSave, children } = props;
+  const { flow, open, onOpenChange, onSave, children, clearOnClose=true } = props;
   const [title, setTitle] = useState<string>(flow?.title || "Untitled Flow");
   const [bio, setBio] = useState<string>(flow?.bio || "");
   const [isPending, startTransition] = useTransition();
@@ -53,8 +54,10 @@ export function NewFlowDialog(props: NewFlowDialogProps = {}) {
   }
 
   const handleOnClose = () => {
-    setBio("");
-    setTitle("Untitled Flow");
+    if ( clearOnClose ) {
+       setBio("");
+				setTitle("Untitled Flow");
+    }
     if (onOpenChange) onOpenChange(false);
   };
 
