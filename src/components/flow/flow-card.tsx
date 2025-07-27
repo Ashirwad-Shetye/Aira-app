@@ -130,7 +130,7 @@ const FlowCard = ( { flow, latestFlow, onEdit, onDelete }: Props ) => {
 				</div>
 				<div className='flex flex-col gap-5'>
 					<div className='text-sm'>
-						<p className='text-muted-foreground bg-gray-100 px-2 py-0.5 cursor-default w-fit'>
+						<p className='text-muted-foreground border bg-white rounded-xs px-2 py-0.5 cursor-default w-fit'>
 							{flow.moment_count ?? 0}{" "}
 							{flow.moment_count === 1 ? "moment" : "moments"}
 						</p>
