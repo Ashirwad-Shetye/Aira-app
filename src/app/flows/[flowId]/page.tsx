@@ -23,6 +23,7 @@ import BlurhashCanvas from "@/lib/blurhash-utils";
 import Image from "next/image";
 import { SortByComboBox } from "@/components/combo-box/sort-by-combo-box";
 import { NewFlowDialog } from "@/components/new-flow-dialog/new-flow-dialog";
+import { Badge } from "@/components/ui/badge";
 
 export default function FlowIdPage() {
 	const { flowId } = useParams();
@@ -54,7 +55,7 @@ export default function FlowIdPage() {
 				const { data, error } = await supabase
 					.from("flows")
 					.select(
-						"id, title, bio, created_at, user_id, cover_photo_url, cover_photo_blurhash"
+						"id, title, bio, created_at, user_id, cover_photo_url, cover_photo_blurhash, tags"
 					)
 					.eq("id", flowId)
 					.single();
@@ -232,13 +233,14 @@ export default function FlowIdPage() {
 		id?: string;
 		title: string;
 		bio?: string;
+		tags?: string[]
 	}) => {
 		if (!data.id) return;
 		setFlowLoading(true);
 		setError(null);
 		const { error } = await supabase
 			.from("flows")
-			.update({ title: data.title, bio: data.bio })
+			.update({ title: data.title, bio: data.bio, tags: data.tags })
 			.eq("id", data.id);
 		if (error) {
 			setError(error.message);
@@ -251,6 +253,7 @@ export default function FlowIdPage() {
 					...prev,
 					title: data.title,
 					bio: data.bio ?? prev.bio ?? null,
+					tags: data.tags ?? prev.tags ?? []
 				};
 			});
 		}
@@ -420,6 +423,18 @@ export default function FlowIdPage() {
 									) : (
 										<p className='text-muted-foreground'>Add bio</p>
 									)}
+									{flow?.tags && (
+										<div className='flex flex-wrap gap-2'>
+											{flow.tags.map((tag) => (
+												<Badge
+													key={tag}
+													variant='outline'
+												>
+													<span>#{tag}</span>
+												</Badge>
+											))}
+										</div>
+									)}
 									<div>
 										<p className='text-gray-500 text-xs'>
 											Created on: {formatDate(flow.created_at)}
@@ -477,7 +492,7 @@ export default function FlowIdPage() {
 									onDelete={handleDelete}
 									onDuplicate={handleDuplicate}
 									isDeleting={deletingIds.has(moment.id)}
-									isNew={moment.id.startsWith( "temp_" )}
+									isNew={moment.id.startsWith("temp_")}
 									latestMoment={isLatestMoment(moment)}
 								/>
 							))}

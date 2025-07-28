@@ -9,5 +9,6 @@ export interface Flow {
 	cover_photo_url?: string
 	cover_photo_blurhash?: string
 	moment_count?: number;
-  	last_activity?: string | null;
+	last_activity?: string | null;
+	tags?: string[]
 }

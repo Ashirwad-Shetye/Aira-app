@@ -26,43 +26,29 @@ const Flows = () => {
 	const scrollContainerRef = useRef<HTMLDivElement>(null);
 	const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 	const [selectedFlow, setSelectedFlow] = useState<Flow | null>(null);
-	const [ deletingIds, setDeletingIds ] = useState<Set<string>>( new Set() );
-	const [ sortByValue, setSortByValue ] = useState( "last edited" );
+	const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+	const [sortByValue, setSortByValue] = useState("last edited");
+	const [allTags, setAllTags] = useState<string[]>([]);
+	const [activeTag, setActiveTag] = useState<string | null>(null);
+	const hasFetchedTagsRef = useRef(false);
 
-	const tags = [
-		"mindfulness",
-		"self help",
-		"meditation",
-		"personal growth",
-		"mental health",
-		"gratitude",
-		"self care",
-		"motivation",
-		"reflection",
-		"productivity",
-		"wellness",
-		"stress relief",
-		"goal setting",
-		"positive thinking",
-		"emotional intelligence",
-		"self discovery",
-		"resilience",
-		"habits",
-		"self love",
-		"mindset",
-		"balance",
-		"inner peace",
-		"journaling",
-		"self improvement",
-		"awareness",
-		"focus",
-		"inspiration",
-		"daily logs",
-		"special",
-		"random",
-	];
+	const fetchAllTags = async () => {
+		if (status !== "authenticated" || !session?.user?.id) return;
+		try {
+			const { data, error } = await supabase.rpc("get_user_flow_tags", {
+				user_id_input: session.user.id,
+			});
+			if (error) {
+				console.error("Error fetching tags:", error.message);
+			} else {
+				setAllTags(data ?? []);
+			}
+		} catch (error: any) {
+			console.error("Error fetching tags:", error.message);
+		}
+	};
 
-	const fetchFlows = async() => {
+	const fetchFlows = async () => {
 		setIsLoading(true);
 		setError(null);
 
@@ -101,7 +87,6 @@ const Flows = () => {
 			if (error) {
 				throw new Error(`Error fetching flows: ${error.message}`);
 			}
-
 			setFlows(data);
 		} catch (error: any) {
 			console.error(error);
@@ -109,11 +94,10 @@ const Flows = () => {
 		} finally {
 			setIsLoading(false);
 		}
-	}
+	};
 
 	const hasFetchedRef = useRef(false);
 
-	// 1️⃣ Initial fetch — run only once when session is ready
 	useEffect(() => {
 		if (
 			status === "authenticated" &&
@@ -122,18 +106,18 @@ const Flows = () => {
 		) {
 			const fetchData = async () => {
 				try {
-					await fetchFlows();
+					await Promise.all([fetchFlows(), fetchAllTags()]);
 				} catch (error) {
 					console.error(error);
 				} finally {
 					hasFetchedRef.current = true;
+					hasFetchedTagsRef.current = true;
 				}
 			};
 			fetchData();
 		}
 	}, [status, session]);
 
-	// 2️⃣ Refetch on sort change — only after initial fetch
 	useEffect(() => {
 		if (hasFetchedRef.current) {
 			fetchFlows();
@@ -158,7 +142,6 @@ const Flows = () => {
 		setDeletingIds((prev) => new Set(prev).add(selectedFlow.id));
 
 		try {
-			// 1. Extract the cover photo filename from the URL
 			const coverUrl = selectedFlow.cover_photo_url;
 			if (coverUrl) {
 				const filePath = coverUrl.split("/flow-cover-photos/")[1];
@@ -176,7 +159,6 @@ const Flows = () => {
 				}
 			}
 
-			// 2. Delete the flow
 			const { error } = await supabase
 				.from("flows")
 				.delete()
@@ -207,13 +189,14 @@ const Flows = () => {
 		id?: string;
 		title: string;
 		bio?: string;
+		tags?: string[];
 	}) {
 		if (!data.id) return;
 		setIsLoading(true);
 		setError(null);
 		const { error } = await supabase
 			.from("flows")
-			.update({ title: data.title, bio: data.bio })
+			.update({ title: data.title, bio: data.bio, tags: data.tags ?? [] })
 			.eq("id", data.id);
 		if (error) {
 			setError(error.message);
@@ -222,21 +205,28 @@ const Flows = () => {
 		}
 		setFlows((prev) =>
 			prev.map((f) =>
-				f.id === data.id ? { ...f, title: data.title, bio: data.bio } : f
+				f.id === data.id
+					? { ...f, title: data.title, bio: data.bio, tags: data.tags }
+					: f
 			)
 		);
 		setDialogOpen(false);
 		setEditFlow(null);
 		setIsLoading(false);
+		hasFetchedTagsRef.current = false;
+		await fetchAllTags();
 	}
 
-	const latestActivityTimestamp = flows.reduce((latest: string | null, flow) => {
-		if (!latest) return flow.last_activity ?? null;
-		if (!flow.last_activity) return latest;
-		return new Date(flow.last_activity) > new Date(latest)
-			? flow.last_activity
-			: latest;
-	}, null);
+	const latestActivityTimestamp = flows.reduce(
+		(latest: string | null, flow) => {
+			if (!latest) return flow.last_activity ?? null;
+			if (!flow.last_activity) return latest;
+			return new Date(flow.last_activity) > new Date(latest)
+				? flow.last_activity
+				: latest;
+		},
+		null
+	);
 
 	return (
 		<ScrollableHeaderLayout
@@ -265,7 +255,11 @@ const Flows = () => {
 							<div className='h-6 w-full bg-white' />
 						</div>
 						<div className='sticky top-14 z-40 w-full'>
-							<TagsBar tags={tags} />
+							<TagsBar
+								tags={allTags}
+								activeTag={activeTag}
+								onTagSelect={(tag) => setActiveTag(tag)}
+							/>
 							<div className='bg-white w-full flex items-center py-5 justify-between'>
 								<NewFlowDialog
 									open={dialogOpen}
@@ -277,7 +271,7 @@ const Flows = () => {
 									onSave={editFlow ? handleSaveFlow : undefined}
 									children={
 										<Button
-											variant="primary"
+											variant='primary'
 											className='group cursor-pointer select-none flex items-center justify-center'
 										>
 											<div className='gap-2 flex items-center justify-center'>
@@ -312,22 +306,24 @@ const Flows = () => {
 										No flows found. Create one to get started!
 									</p>
 								) : (
-									flows.map((flow, idx) => (
-										<FlowCard
-											key={`${flow.id}_${idx}`}
-											flow={flow}
-											latestFlow={
-												flow.last_activity === latestActivityTimestamp
-											}
-											onEdit={handleEditFlow}
-											onDelete={handleDeleteFlow}
-										/>
-									))
+									flows
+										.filter((flow) =>
+											activeTag ? flow.tags?.includes(activeTag) : true
+										)
+										.map((flow, idx) => (
+											<FlowCard
+												key={`${flow.id}_${idx}`}
+												flow={flow}
+												latestFlow={
+													flow.last_activity === latestActivityTimestamp
+												}
+												onEdit={handleEditFlow}
+												onDelete={handleDeleteFlow}
+											/>
+										))
 								)}
 							</div>
 						)}
-						{/* Optional: Add padding to ensure content height for testing */}
-						{/* <div className='pb-[1000px]' /> */}
 					</div>
 				</div>
 			</div>

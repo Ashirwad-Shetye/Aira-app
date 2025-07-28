@@ -20,6 +20,7 @@ import { supabase } from '@/lib/supabase/client';
 import { useSession } from 'next-auth/react';
 import BlurhashCanvas from '@/lib/blurhash-utils';
 import Image from 'next/image'
+import { Badge } from '../ui/badge';
 
 type Props = {
     flow: Flow
@@ -68,47 +69,6 @@ const FlowCard = ( { flow, latestFlow, onEdit, onDelete }: Props ) => {
 				className='p-5 bg-[#fbfbfb] flex flex-col gap-5 hover:shadow justify-between transition-all duration-300 ease-in-out transform'
 			>
 				<div className='flex flex-col gap-5 relative cursor-default'>
-					{/* {flow.cover_photo_url ? (
-						<div className='relative w-full aspect-[4/1] group overflow-hidden bg-muted/50'>
-							{flow.cover_photo_blurhash && (
-								<BlurhashCanvas
-									hash={flow.cover_photo_blurhash}
-									width={32}
-									height={8}
-									punch={1}
-								/>
-							)}
-							<Image
-								src={flow.cover_photo_url}
-								alt='Cover'
-								className='w-full h-full object-cover transition-opacity duration-300 relative z-10'
-								loading='lazy'
-								onLoad={(e) => {
-									e.currentTarget.style.opacity = "1";
-								}}
-								height={2000}
-								width={2000}
-								style={{
-									opacity: flow.cover_photo_blurhash ? 0 : 1,
-									position: "absolute",
-									top: 0,
-									left: 0,
-								}}
-								unoptimized
-							/>
-						</div>
-					) : (
-						<div className='relative w-full aspect-[4/1] group overflow-hidden bg-muted/50'>
-							{flow.cover_photo_blurhash && (
-								<BlurhashCanvas
-									hash={flow.cover_photo_blurhash}
-									width={32}
-									height={8}
-									punch={1}
-								/>
-							)}
-						</div>
-					)} */}
 					<div className='flex items-center gap-3'>
 						{latestFlow && (
 							<p className='text-xs bg-amber-600 text-white px-2 py-0.5 w-fit'>
@@ -129,6 +89,18 @@ const FlowCard = ( { flow, latestFlow, onEdit, onDelete }: Props ) => {
 					)}
 				</div>
 				<div className='flex flex-col gap-5'>
+					{flow?.tags && (
+						<div className='flex flex-wrap gap-2'>
+							{flow.tags.map((tag) => (
+								<Badge
+									key={tag}
+									variant='outline'
+								>
+									<span>#{tag}</span>
+								</Badge>
+							))}
+						</div>
+					)}
 					<div className='text-sm'>
 						<p className='text-muted-foreground border bg-white rounded-xs px-2 py-0.5 cursor-default w-fit'>
 							{flow.moment_count ?? 0}{" "}
