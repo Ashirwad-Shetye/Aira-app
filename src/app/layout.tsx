@@ -12,13 +12,6 @@ const geistMono = Geist_Mono({
 	subsets: ["latin"],
 });
 
-const ptSans = PT_Sans({
-	variable: "--font-pt-sans",
-	weight: ["400", "700"],
-	style: ["normal", "italic"],
-	subsets: ["latin"],
-});
-
 const manrope = Manrope({
 	variable: "--font-manrope",
 	weight: ["400", "700"],
@@ -137,7 +130,7 @@ export default function RootLayout({
 				/>
 			</head>
 			<body
-				className={`${geistSans.variable} ${libre.variable} ${geistMono.variable} ${ptSans.variable} bg-[#F5FAF8] antialiased h-screen w-screen flex flex-col relative`}
+				className={`${geistSans.variable} ${libre.variable} ${geistMono.variable} bg-[#F5FAF8] antialiased h-screen w-screen flex flex-col relative`}
 			>
 				<Providers>{children}</Providers>
 			</body>

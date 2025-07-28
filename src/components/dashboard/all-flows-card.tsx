@@ -120,7 +120,7 @@ const SingleRecentFlowCard = () => {
 					<div className='flex flex-col gap-0.5 text-left'>
 						<div className='flex items-center gap-1 font-semibold'>
 							<Icons.flow />
-							<h1 className='font-pt-sans text-base'>Latest Flow</h1>
+							<h1 className='  text-base'>Latest Flow</h1>
 						</div>
 						<p className='text-sm'>Pick up where you left off.</p>
 					</div>
@@ -156,7 +156,7 @@ const SingleRecentFlowCard = () => {
 				<div className='flex flex-col gap-0.5'>
 					<div className='flex items-center gap-1 font-semibold'>
 						<Icons.flow />
-						<h1 className='font-pt-sans text-base'>Latest Flow</h1>
+						<h1 className='  text-base'>Latest Flow</h1>
 					</div>
 					<p className='text-sm text-muted-foreground'>
 						Pick up where you left off.

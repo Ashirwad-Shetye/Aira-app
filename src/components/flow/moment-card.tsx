@@ -65,7 +65,7 @@ const MomentCard = ({
 		<div
 			onClick={() => handleOpenMoment(moment.id)}
 			className={clsx(
-				"p-5 bg-[#fbfbfb] flex flex-col hover:shadow justify-between transition-all duration-300 ease-in-out transform",
+				"p-5 bg-accent flex flex-col hover:shadow justify-between transition-all duration-300 ease-in-out transform rounded-xs",
 				{
 					"opacity-0 scale-95": (isNew && !animateIn) || animateOut,
 					"opacity-100 scale-100": isNew && animateIn,
@@ -97,7 +97,7 @@ const MomentCard = ({
 			{/* Footer */}
 			<div className='flex items-center gap-5 justify-between mt-3'>
 				{moment.updated_at && (
-					<p className='text-xs text-gray-400 truncate'>
+					<p className='text-xs text-gray-500 truncate'>
 						Last edited: {formatDate(moment.updated_at)}
 					</p>
 				)}

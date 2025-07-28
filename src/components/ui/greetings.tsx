@@ -39,7 +39,7 @@ const Greetings = ({userName, align}: Props) => {
 
   return (
     <div>
-      <h1 className={`text-${align} font-pt-sans text-2xl`}>
+      <h1 className={`text-${align}   text-2xl`}>
         {greeting}, {userName}
       </h1>
       <p className='text-xl text-gray-500'>{formattedDate}</p>

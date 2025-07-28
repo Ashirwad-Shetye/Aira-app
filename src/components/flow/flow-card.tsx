@@ -66,7 +66,7 @@ const FlowCard = ( { flow, latestFlow, onEdit, onDelete }: Props ) => {
     return (
 			<div
 				onClick={() => handleOpenFlow(flow.id)}
-				className='p-5 bg-[#fbfbfb] flex flex-col gap-5 hover:shadow justify-between transition-all duration-300 ease-in-out transform'
+				className='p-5 bg-accent flex flex-col gap-5 hover:shadow rounded-xs justify-between transition-all duration-300 ease-in-out transform'
 			>
 				<div className='flex flex-col gap-5 relative cursor-default'>
 					<div className='flex items-center gap-3'>
@@ -109,7 +109,7 @@ const FlowCard = ( { flow, latestFlow, onEdit, onDelete }: Props ) => {
 					</div>
 					<div className='flex items-center gap-5 justify-between w-full'>
 						<div className='flex items-center justify-between text-sm cursor-default'>
-							<p className='text-xs text-gray-400'>
+							<p className='text-xs text-gray-500'>
 								Last activity:{" "}
 								{flow.last_activity ? formatDate(flow.last_activity) : "—"}
 							</p>

@@ -175,7 +175,7 @@ export default function MomentEditor({
 			</BubbleMenu>
 			<EditorContent
 				editor={editor}
-				className='prose prose-sm max-w-full text-base min-h-[300px] leading-7 flex-1 w-full resize-none outline-none font-pt-sans focus:outline-none focus:ring-0 border-none pt-5 p-10'
+				className='prose prose-sm max-w-full text-base min-h-[300px] leading-7 flex-1 w-full resize-none outline-none   focus:outline-none focus:ring-0 border-none pt-5 p-10'
 			/>
 		</div>
 	);

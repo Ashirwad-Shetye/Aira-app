@@ -98,14 +98,9 @@ export function NewFlowDialog(props: NewFlowDialogProps = {}) {
 				className='w-[50rem]'
 				role='dialog'
 			>
-				<DialogTitle
-					id='dialog-title'
-					className='flex gap-2 items-center font-pt-sans'
-				>
+				<DialogTitle id='dialog-title'>
 					<Icons.flow />
-					<p className='font-normal'>
-						{flow ? "Edit flow" : "Create new flow"}
-					</p>
+					<p className=''>{flow ? "Edit flow" : "Create new flow"}</p>
 				</DialogTitle>
 				<DialogHeader>
 					<DialogDescription
@@ -120,7 +115,7 @@ export function NewFlowDialog(props: NewFlowDialogProps = {}) {
 					<div className='grid gap-4 my-3'>
 						<div className='grid gap-2'>
 							<div className='flex flex-col gap-1'>
-								<label htmlFor='flow-name-1'>Flow Title</label>
+								<label htmlFor='flow-name-1 text-sm'>Flow Title</label>
 								<p
 									id='flow-name-desc'
 									className='text-xs text-muted-foreground'
@@ -147,7 +142,9 @@ export function NewFlowDialog(props: NewFlowDialogProps = {}) {
 						</div>
 						<div className='grid gap-2'>
 							<div className='flex flex-col gap-1'>
-								<label htmlFor='flow-bio-1'>About this Flow (optional)</label>
+								<label htmlFor='flow-bio-1 text-sm'>
+									About this Flow (optional)
+								</label>
 								<p
 									id='flow-bio-desc'
 									className='text-xs text-muted-foreground'
@@ -174,7 +171,7 @@ export function NewFlowDialog(props: NewFlowDialogProps = {}) {
 						</div>
 						<div className='grid gap-2'>
 							<div className='flex flex-col gap-1'>
-								<label htmlFor='flow-tags'>Tags (optional)</label>
+								<label htmlFor='flow-tags text-sm'>Tags (optional)</label>
 								<p
 									id='flow-tags-desc'
 									className='text-xs text-muted-foreground'
