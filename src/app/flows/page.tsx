@@ -59,11 +59,9 @@ const Flows = () => {
 			switch (sortByValue) {
 				case "last created":
 					column = "created_at";
-					ascending = false;
 					break;
 				case "last edited":
 					column = "last_activity";
-					ascending = false;
 					break;
 				case "oldest created":
 					column = "created_at";
@@ -73,21 +71,44 @@ const Flows = () => {
 					column = "last_activity";
 					ascending = true;
 					break;
-				default:
-					column = "last_activity";
-					ascending = false;
 			}
 
-			const { data, error } = await supabase
-				.rpc("get_flows_with_moment_data", {
+			const [personalFlowsRes, sharedFlowsRes] = await Promise.all([
+				supabase.rpc("get_flows_with_moment_data", {
 					user_id_input: session?.user.id,
-				})
-				.order(column, { ascending });
+				}),
+				supabase.rpc("get_shared_flows_with_moment_data", {
+					user_id_input: session?.user.id,
+				}),
+			]);
 
-			if (error) {
-				throw new Error(`Error fetching flows: ${error.message}`);
+			if (personalFlowsRes.error || sharedFlowsRes.error) {
+				throw new Error(
+					`Error fetching flows: ${personalFlowsRes.error?.message ?? ""} ${
+						sharedFlowsRes.error?.message ?? ""
+					}`
+				);
 			}
-			setFlows(data);
+
+			const personalFlows = (personalFlowsRes.data ?? []).map((f: Flow) => ({
+				...f,
+				is_shared: false,
+			}));
+
+			const sharedFlows = (sharedFlowsRes.data ?? []).map((f: Flow) => ({
+				...f,
+				is_shared: true,
+			}));
+
+			const combined = [...personalFlows, ...sharedFlows];
+
+			const sorted = combined.sort((a, b) => {
+				const aDate = new Date(a[column] ?? a.created_at).getTime();
+				const bDate = new Date(b[column] ?? b.created_at).getTime();
+				return ascending ? aDate - bDate : bDate - aDate;
+			});
+
+			setFlows(sorted);
 		} catch (error: any) {
 			console.error(error);
 			setError(error.message);

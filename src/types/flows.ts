@@ -1,14 +1,16 @@
-export interface Flow {
+export type Flow = {
 	id: string;
-	user_id: string;
 	title: string;
-    bio?: string;
-    participant?: string[]
-    current_writer?: string
+	bio?: string;
 	created_at: string;
-	cover_photo_url?: string
-	cover_photo_blurhash?: string
+	updated_at?: string;
+	cover_photo_url?: string;
+	cover_photo_blurhash?: string;
+	tags?: string[];
+	last_activity?: string;
 	moment_count?: number;
-	last_activity?: string | null;
-	tags?: string[]
-}
+	unread_count?: number;
+	role?: 'owner' | 'member';
+	owner_id?: string;
+	is_shared?: boolean;
+};
