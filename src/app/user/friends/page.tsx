@@ -1,5 +1,4 @@
-// src/app/user/friends/page.tsx
- "use client";
+"use client";
 
 import { useEffect, useRef, useState } from "react";
 import BottomControls from "@/components/bottom-controls/bottom-controls";
@@ -15,6 +14,9 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/custom-alert-dialog/confirm-dialog";
 
 const FriendsPage = () => {
 	const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -30,15 +32,58 @@ const FriendsPage = () => {
 	}>(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+	const [ isFetching, setIsFetching ] = useState( true );
+	const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+	const [friendToRemove, setFriendToRemove] = useState<null | {
+		id: string;
+		username: string;
+	}>(null);
 
-	// 📨 Send friend request
+	const refreshData = async () => {
+		if (!session?.user?.id) return;
+		setIsFetching(true);
+
+		const fetchFriends = supabase
+			.from("friends")
+			.select("friend:friend_id(id, username, email, avatar_url)")
+			.eq("user_id", session.user.id);
+
+		const fetchIncomingRequests = supabase
+			.from("friend_requests")
+			.select("id, sender:sender_id(id, username, email)")
+			.eq("receiver_id", session.user.id)
+			.eq("status", "pending");
+
+		const fetchSentRequests = supabase
+			.from("friend_requests")
+			.select("id, receiver:receiver_id(id, username)")
+			.eq("sender_id", session.user.id)
+			.eq("status", "pending");
+
+		const [friendsRes, incomingRes, sentRes] = await Promise.all([
+			fetchFriends,
+			fetchIncomingRequests,
+			fetchSentRequests,
+		]);
+
+		if (!friendsRes.error) setFriends(friendsRes.data.map((f) => f.friend));
+		if (!incomingRes.error) setIncomingRequests(incomingRes.data ?? []);
+		if (!sentRes.error) setSentRequests(sentRes.data ?? []);
+
+		setIsFetching(false);
+	};
+
+	useEffect(() => {
+		refreshData();
+	}, [session?.user?.id]);
+
 	const handleSendRequest = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setIsLoading(true);
 		setSearchStatus(null);
 
 		if (!session?.user?.id) {
-			setSearchStatus({ type: "error", message: "You must be logged in." });
+			setSearchStatus({ type: "error", message: "Please log in to continue." });
 			setIsLoading(false);
 			return;
 		}
@@ -46,18 +91,16 @@ const FriendsPage = () => {
 		const username = searchInput.trim();
 
 		try {
-			// 1. Check if user exists
 			const { data: users, error: findError } = await supabase
 				.from("users")
 				.select("id")
 				.eq("username", username);
 
 			if (findError) throw findError;
-
 			if (!users || users.length === 0) {
 				setSearchStatus({
 					type: "error",
-					message: `No user found with username "${username}". You can invite them via email.`,
+					message: `No user found with username "${username}". Invite them via email to join!`,
 				});
 				setInviteDialogOpen(true);
 			} else {
@@ -66,26 +109,25 @@ const FriendsPage = () => {
 				if (toUserId === session.user.id) {
 					setSearchStatus({
 						type: "error",
-						message: "You cannot send a request to yourself.",
+						message: "You cannot send a friend request to yourself.",
 					});
 					setIsLoading(false);
 					return;
 				}
 
-				const { data: existing, error: existingError } = await supabase
-					.from("friend_requests")
-					.select("id")
-					.or(
-						`and(sender_id.eq.${session.user.id},receiver_id.eq.${toUserId}),and(sender_id.eq.${toUserId},receiver_id.eq.${session.user.id})`
-					)
-					.eq("status", "pending");
-
-				if (existingError) throw existingError;
-
-				if (existing.length > 0) {
+				if (friends.find((f) => f.id === toUserId)) {
 					setSearchStatus({
 						type: "error",
-						message: "A friend request is already pending.",
+						message: `${username} is already in your friends list.`,
+					});
+					setIsLoading(false);
+					return;
+				}
+
+				if (sentRequests.find((r) => r.receiver.id === toUserId)) {
+					setSearchStatus({
+						type: "error",
+						message: `Friend request to ${username} is already pending.`,
 					});
 					setIsLoading(false);
 					return;
@@ -103,9 +145,10 @@ const FriendsPage = () => {
 
 				setSearchStatus({
 					type: "success",
-					message: `Friend request sent to "${username}".`,
+					message: `Friend request successfully sent to ${username}!`,
 				});
 				setSearchInput("");
+				refreshData();
 			}
 		} catch (error: any) {
 			setSearchStatus({ type: "error", message: error.message });
@@ -114,74 +157,26 @@ const FriendsPage = () => {
 		}
 	};
 
-	// 🔃 Fetch data
-	useEffect(() => {
-		if (!session?.user?.id) return;
-
-		const fetchFriends = async () => {
-			const { data, error } = await supabase
-				.from("friends")
-				.select("friend:friend_id(id, username)")
-				.eq("user_id", session.user.id);
-
-			if (!error) setFriends(data.map((f) => f.friend));
-		};
-
-		const fetchIncomingRequests = async () => {
-			const { data, error } = await supabase
-				.from("friend_requests")
-				.select("id, sender:sender_id(id, username, email)")
-				.eq("receiver_id", session.user.id)
-				.eq("status", "pending");
-
-			if (!error) setIncomingRequests(data ?? []);
-		};
-
-		const fetchSentRequests = async () => {
-			const { data, error } = await supabase
-				.from("friend_requests")
-				.select("id, receiver:receiver_id(id, username)")
-				.eq("sender_id", session.user.id)
-				.eq("status", "pending");
-
-			if (!error) setSentRequests(data ?? []);
-		};
-
-		fetchFriends();
-		fetchIncomingRequests();
-		fetchSentRequests();
-	}, [session?.user?.id]);
-
-	// ✅ Accept friend request
 	const handleAcceptRequest = async (requestId: string, senderId: string) => {
 		if (!session?.user?.id) return;
 
-		const { error: updateError } = await supabase
+		const { error } = await supabase
 			.from("friend_requests")
 			.update({ status: "accepted" })
 			.eq("id", requestId);
 
-		if (updateError) {
-			console.error("Error accepting request:", updateError.message);
-			return;
-		}
-
-		setIncomingRequests((prev) => prev.filter((r) => r.id !== requestId));
+		if (!error) refreshData();
 	};
 
-	// ❌ Decline friend request
 	const handleDeclineRequest = async (requestId: string) => {
 		const { error } = await supabase
 			.from("friend_requests")
 			.update({ status: "declined" })
 			.eq("id", requestId);
 
-		if (!error) {
-			setIncomingRequests((prev) => prev.filter((r) => r.id !== requestId));
-		}
+		if (!error) refreshData();
 	};
 
-	// 🔥 Unfriend
 	const handleUnfriend = async (friendId: string) => {
 		if (!session?.user?.id) return;
 
@@ -192,10 +187,28 @@ const FriendsPage = () => {
 				`and(user_id.eq.${session.user.id},friend_id.eq.${friendId}),and(user_id.eq.${friendId},friend_id.eq.${session.user.id})`
 			);
 
-		if (!error) {
-			setFriends((prev) => prev.filter((f) => f.id !== friendId));
-		}
+		if (!error) refreshData();
 	};
+
+	const FriendSkeleton = () => (
+		<div className='flex justify-between items-center border p-3 rounded'>
+			<Skeleton className='h-6 w-32' />
+			<Skeleton className='h-8 w-20' />
+		</div>
+	);
+
+	const RequestSkeleton = () => (
+		<div className='flex items-center justify-between border p-3 rounded-md'>
+			<div className='space-y-2'>
+				<Skeleton className='h-5 w-28' />
+				<Skeleton className='h-4 w-40' />
+			</div>
+			<div className='flex gap-2'>
+				<Skeleton className='h-8 w-20' />
+				<Skeleton className='h-8 w-20' />
+			</div>
+		</div>
+	);
 
 	return (
 		<ScrollableHeaderLayout
@@ -215,9 +228,9 @@ const FriendsPage = () => {
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<Button
-									variant={"primary"}
+									variant='primary'
 									onClick={() => setInviteDialogOpen(!inviteDialogOpen)}
-									className='flex items-center gap-1'
+									className='flex items-center gap-1 text-sm'
 								>
 									<Icons.email className='shrink-0' />
 									<p>Invite</p>
@@ -231,10 +244,12 @@ const FriendsPage = () => {
 
 					{/* 🔍 Add Friend */}
 					<div>
-						<h2 className='text-lg font-medium mb-2'>Add a Friend</h2>
+						<h2 className='text-lg font-medium mb-2 text-primary'>
+							Add a Friend
+						</h2>
 						<form
 							onSubmit={handleSendRequest}
-							className='flex items-center gap-3'
+							className='flex items-center gap-3 text-sm'
 						>
 							<input
 								type='text'
@@ -246,6 +261,7 @@ const FriendsPage = () => {
 							<Button
 								type='submit'
 								variant='primary'
+								className='text-sm'
 								disabled={!searchInput.trim() || isLoading}
 							>
 								{isLoading ? "Sending..." : "Send Request"}
@@ -264,12 +280,83 @@ const FriendsPage = () => {
 						)}
 					</div>
 
+					{/* 👥 Friend List */}
+					<div className='mt-10'>
+						<h2 className='text-lg font-medium mb-2 text-primary'>Friends</h2>
+						{isFetching ? (
+							<div className='space-y-2'>
+								<FriendSkeleton />
+								<FriendSkeleton />
+								<FriendSkeleton />
+							</div>
+						) : friends.length === 0 ? (
+							<Card className='bg-muted'>
+								<CardContent className='flex flex-col items-center justify-center h-32 text-muted-foreground p-6'>
+									<Icons.users className='h-8 w-8 mb-2 text-muted-foreground/50' />
+									<p className='text-center'>
+										Your friend list is empty. Start connecting by sending
+										friend requests or inviting friends to join!
+									</p>
+								</CardContent>
+							</Card>
+						) : (
+							<ul className='space-y-2'>
+								{friends.map((friend) => (
+									<li
+										key={friend.id}
+										className='flex justify-between items-center border p-3 rounded'
+									>
+										<div className='flex items-center gap-3'>
+											{friend.avatar_url ? (
+												<img
+													src={friend.avatar_url}
+													alt='avatar'
+													className='w-8 h-8 rounded-full object-cover'
+												/>
+											) : (
+												<div className='w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs text-muted-foreground font-medium'>
+													{friend.username?.charAt(0).toUpperCase()}
+												</div>
+											)}
+											<div className='flex flex-col'>
+												<span className='text-sm font-medium'>
+													{friend.username}
+												</span>
+												<span className='text-xs text-muted-foreground'>
+													{friend.email}
+												</span>
+											</div>
+										</div>
+										<Button
+											variant='destructive'
+											size='sm'
+											onClick={() => {
+												setFriendToRemove({
+													id: friend.id,
+													username: friend.username,
+												});
+												setConfirmDialogOpen(true);
+											}}
+										>
+											Remove
+										</Button>
+									</li>
+								))}
+							</ul>
+						)}
+					</div>
+
 					{/* 📬 Incoming Requests */}
-					{incomingRequests.length > 0 && (
-						<div className='mt-10'>
-							<h2 className='text-lg font-medium mb-2'>
-								Pending Friend Requests
-							</h2>
+					<div className='mt-10'>
+						<h2 className='text-lg font-medium mb-2 text-primary'>
+							Pending Friend Requests
+						</h2>
+						{isFetching ? (
+							<div className='space-y-3'>
+								<RequestSkeleton />
+								<RequestSkeleton />
+							</div>
+						) : incomingRequests.length > 0 ? (
 							<ul className='space-y-3'>
 								{incomingRequests.map((req) => (
 									<li
@@ -303,13 +390,30 @@ const FriendsPage = () => {
 									</li>
 								))}
 							</ul>
-						</div>
-					)}
+						) : (
+							<Card className='bg-muted'>
+								<CardContent className='flex flex-col items-center justify-center h-32 text-muted-foreground p-6'>
+									<Icons.email className='h-8 w-8 mb-2 text-muted-foreground/50' />
+									<p className='text-center'>
+										No pending friend requests. Check back later or invite new
+										friends!
+									</p>
+								</CardContent>
+							</Card>
+						)}
+					</div>
 
 					{/* 🚀 Sent Requests */}
-					{sentRequests.length > 0 && (
-						<div className='mt-10'>
-							<h2 className='text-lg font-medium mb-2'>Sent Friend Requests</h2>
+					<div className='mt-10'>
+						<h2 className='text-lg font-medium mb-2 text-primary'>
+							Sent Friend Requests
+						</h2>
+						{isFetching ? (
+							<div className='space-y-2'>
+								<FriendSkeleton />
+								<FriendSkeleton />
+							</div>
+						) : sentRequests.length > 0 ? (
 							<ul className='space-y-2'>
 								{sentRequests.map((req) => (
 									<li
@@ -323,38 +427,33 @@ const FriendsPage = () => {
 									</li>
 								))}
 							</ul>
-						</div>
-					)}
-
-					{/* 👥 Friend List */}
-					<div className='mt-10'>
-						<h2 className='text-lg font-medium mb-2'>Friends</h2>
-						{friends.length === 0 ? (
-							<p className='text-sm text-muted-foreground'>
-								You don’t have any friends yet.
-							</p>
 						) : (
-							<ul className='space-y-2'>
-								{friends.map((friend) => (
-									<li
-										key={friend.id}
-										className='flex justify-between items-center border p-3 rounded'
-									>
-										<p>{friend.username}</p>
-										<Button
-											variant='destructive'
-											size='sm'
-											onClick={() => handleUnfriend(friend.id)}
-										>
-											Remove
-										</Button>
-									</li>
-								))}
-							</ul>
+							<Card className='bg-muted'>
+								<CardContent className='flex flex-col items-center justify-center h-32 text-muted-foreground p-6'>
+									<Icons.send className='h-8 w-8 mb-2 text-muted-foreground/50' />
+									<p className='text-center'>
+										No pending sent requests. Try sending a new friend request!
+									</p>
+								</CardContent>
+							</Card>
 						)}
 					</div>
 				</div>
 			</div>
+			<ConfirmDialog
+				open={confirmDialogOpen}
+				onOpenChange={setConfirmDialogOpen}
+				title={`Remove ${friendToRemove?.username}?`}
+				description='This will permanently remove them from your friends list.'
+				cancelText='Cancel'
+				confirmText='Remove'
+				onConfirm={() => {
+					if (friendToRemove) {
+						handleUnfriend(friendToRemove.id);
+						setConfirmDialogOpen(false);
+					}
+				}}
+			/>
 			<InviteUserDialog
 				open={inviteDialogOpen}
 				onOpenChange={setInviteDialogOpen}

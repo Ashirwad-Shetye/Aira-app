@@ -24,6 +24,7 @@ import { AiOutlineLoading3Quarters as loader } from "react-icons/ai";
 import { TbArrowsSort as sort } from "react-icons/tb";
 import { AiOutlineMail as email } from "react-icons/ai";
 import { FcGoogle as googleColored } from "react-icons/fc";
+import { BsSend as send } from "react-icons/bs";
 import dynamic from "next/dynamic";
 const image = dynamic(
   () => import("react-icons/fa").then(m => m.FaImage),
@@ -55,7 +56,8 @@ const Icons = {
 	settings,
 	billing,
 	googleColored,
-	apple
+	apple,
+	send
 };
 
 export default Icons;
