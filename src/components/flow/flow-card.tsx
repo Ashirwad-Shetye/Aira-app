@@ -1,4 +1,4 @@
-"use client"
+ "use client";
 
 import { formatDate } from '@/lib/date-convertors'
 import { Flow } from '@/types/flows'
@@ -18,8 +18,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { supabase } from '@/lib/supabase/client';
 import { useSession } from 'next-auth/react';
-import BlurhashCanvas from '@/lib/blurhash-utils';
-import Image from 'next/image'
 import { Badge } from '../ui/badge';
 
 type Props = {

@@ -1,5 +1,5 @@
 // src/app/dashboard/page.tsx
-"use client";
+ "use client";
 import BottomControls from "@/components/bottom-controls/bottom-controls";
 import AllFlowCard from "@/components/dashboard/all-flows-card";
 import LatestMomentsCard from "@/components/dashboard/latest-moments-card";

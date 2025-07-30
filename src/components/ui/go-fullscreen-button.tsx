@@ -1,5 +1,5 @@
 // go-fullscreen-button.jsx
-"use client";
+ "use client";
 import React, { useEffect, useState } from "react";
 import Icons from "./icons";
 

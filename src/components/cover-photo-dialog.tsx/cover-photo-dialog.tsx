@@ -1,5 +1,5 @@
 // components/cover-photo-dialog.tsx
-"use client";
+ "use client";
 
 import {
 	Dialog,

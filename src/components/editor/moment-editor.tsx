@@ -1,5 +1,5 @@
 // components/editor/MomentEditor.tsx
-"use client";
+ "use client";
 
 import React, { useState, useRef, useEffect } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";

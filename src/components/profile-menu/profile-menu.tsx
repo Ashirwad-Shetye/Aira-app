@@ -1,6 +1,7 @@
-"use client";
+ "use client";
 
 import React from "react";
+import Link from "next/link";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -10,6 +11,29 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { signOut, useSession } from "next-auth/react";
 import Icons from "../ui/icons";
+
+const menuItems = [
+	{
+		label: "Profile",
+		href: "/user/profile",
+		icon: Icons.user,
+	},
+	{
+		label: "Friends",
+		href: "/user/friends",
+		icon: Icons.users,
+	},
+	{
+		label: "Settings",
+		href: "/user/settings",
+		icon: Icons.settings,
+	},
+	{
+		label: "Billing",
+		href: "/user/billing",
+		icon: Icons.billing,
+	},
+];
 
 const ProfileMenu = () => {
 	const { data: session, status } = useSession();
@@ -22,11 +46,9 @@ const ProfileMenu = () => {
 		);
 	}
 
-	if (status === "unauthenticated") {
-		return null;
-	}
+	if (status === "unauthenticated") return null;
 
-	const userImage = session?.user?.image ?? ""
+	const userImage = session?.user?.image ?? "";
 	const userName = session?.user?.name || "NA";
 	const initials = userName
 		.split(" ")
@@ -37,16 +59,13 @@ const ProfileMenu = () => {
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<div className='outline-none focus:ring-0 cursor-pointer leading-none p-0 m-0'>
-					<Avatar className='w-8 h-8 shrink-0 rounded overflow-hidden outline-none focus:ring-0 p-0 m-0'>
+				<div className='outline-none focus:ring-0 cursor-pointer'>
+					<Avatar className='w-8 h-8 rounded'>
 						<AvatarImage
 							src={userImage}
 							alt={userName}
-							className='rounded overflow-hidden'
 						/>
-						<AvatarFallback className='w-8 h-8 rounded overflow-hidden'>
-							{initials}
-						</AvatarFallback>
+						<AvatarFallback>{initials}</AvatarFallback>
 					</Avatar>
 				</div>
 			</DropdownMenuTrigger>
@@ -55,15 +74,25 @@ const ProfileMenu = () => {
 				align='end'
 				sideOffset={20}
 			>
-				<DropdownMenuItem className='cursor-pointer'>Profile</DropdownMenuItem>
-				<DropdownMenuItem className='cursor-pointer'>Billing</DropdownMenuItem>
-				<DropdownMenuItem className='cursor-pointer'>
-					<div
-						className='flex items-center gap-1'
-						onClick={() => signOut({ redirect: true, callbackUrl: "/login" })}
+				{menuItems.map(({ label, href, icon: Icon }) => (
+					<Link
+						href={href}
+						key={label}
+						className='cursor-pointer'
 					>
-						<Icons.signout className='shrink-0' />
-						<h1>Logout</h1>
+						<DropdownMenuItem className='cursor-pointer gap-2'>
+							{Icon && <Icon className='w-4 h-4 shrink-0' />}
+							{label}
+						</DropdownMenuItem>
+					</Link>
+				))}
+				<DropdownMenuItem
+					className='cursor-pointer'
+					onClick={() => signOut({ redirect: true, callbackUrl: "/login" })}
+				>
+					<div className='flex items-center gap-2'>
+						<Icons.signout className='shrink-0 w-4 h-4' />
+						Logout
 					</div>
 				</DropdownMenuItem>
 			</DropdownMenuContent>

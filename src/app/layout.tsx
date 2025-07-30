@@ -1,6 +1,7 @@
 import "./globals.css";
-import { Geist, Geist_Mono, PT_Sans, Manrope, Libre_Caslon_Text } from "next/font/google";
+import { Geist, Geist_Mono, Libre_Caslon_Text } from "next/font/google";
 import { Providers } from "@/providers";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
 	variable: "--font-geist-sans",
@@ -11,13 +12,6 @@ const geistMono = Geist_Mono({
 	variable: "--font-geist-mono",
 	subsets: ["latin"],
 });
-
-const manrope = Manrope({
-	variable: "--font-manrope",
-	weight: ["400", "700"],
-	style: ["normal"],
-	subsets: ["latin"],
-} );
 
 const libre = Libre_Caslon_Text({
 	variable: "--font-libre",
@@ -132,7 +126,9 @@ export default function RootLayout({
 			<body
 				className={`${geistSans.variable} ${libre.variable} ${geistMono.variable} bg-[#F5FAF8] antialiased h-screen w-screen flex flex-col relative`}
 			>
-				<Providers>{children}</Providers>
+				<Providers>
+					{children}
+				</Providers>
 			</body>
 		</html>
 	);

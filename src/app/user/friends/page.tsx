@@ -1,4 +1,5 @@
-"use client";
+// src/app/user/friends/page.tsx
+ "use client";
 
 import { useEffect, useRef, useState } from "react";
 import BottomControls from "@/components/bottom-controls/bottom-controls";
@@ -9,7 +10,11 @@ import { supabase } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import InviteUserDialog from "@/components/invite-user-dialog/invite-user-dialog";
 import Icons from "@/components/ui/icons";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const FriendsPage = () => {
 	const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -23,8 +28,8 @@ const FriendsPage = () => {
 		type: "success" | "error";
 		message: string;
 	}>(null);
-    const [ isLoading, setIsLoading ] = useState( false );
-    const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+	const [isLoading, setIsLoading] = useState(false);
+	const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 
 	// 📨 Send friend request
 	const handleSendRequest = async (e: React.FormEvent) => {
@@ -210,15 +215,15 @@ const FriendsPage = () => {
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<Button
-                                    variant={"primary"}
-                                    onClick={() => setInviteDialogOpen(!inviteDialogOpen)}
+									variant={"primary"}
+									onClick={() => setInviteDialogOpen(!inviteDialogOpen)}
 									className='flex items-center gap-1'
 								>
 									<Icons.email className='shrink-0' />
 									<p>Invite</p>
 								</Button>
 							</TooltipTrigger>
-							<TooltipContent placement="bottom-end">
+							<TooltipContent placement='bottom-end'>
 								<p>Invite your friends</p>
 							</TooltipContent>
 						</Tooltip>

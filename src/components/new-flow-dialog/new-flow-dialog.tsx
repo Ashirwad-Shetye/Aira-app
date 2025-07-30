@@ -1,4 +1,4 @@
-"use client";
+ "use client";
 
 import {
 	Dialog,
@@ -188,7 +188,12 @@ export function NewFlowDialog(props: NewFlowDialogProps = {}) {
 						</div>
 						<div className='grid gap-2'>
 							<div className='flex flex-col gap-1'>
-								<label htmlFor='flow-name-1 text-sm'>Flow Title</label>
+								<label
+									htmlFor='flow-name-1'
+									className='text-sm'
+								>
+									Flow Title
+								</label>
 								<p className='text-xs text-muted-foreground'>
 									This is the name of your Flow — think of it like a personal
 									journal.

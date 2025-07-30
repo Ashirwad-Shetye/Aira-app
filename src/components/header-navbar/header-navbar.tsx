@@ -1,4 +1,4 @@
-"use client";
+ "use client";
 import React from "react";
 import ProfileMenu from "../profile-menu/profile-menu";
 import { redirect, useRouter } from "next/navigation";

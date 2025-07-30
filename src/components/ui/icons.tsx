@@ -1,5 +1,5 @@
 // src/components/ui/icons.tsx
-"use client";
+ "use client";
 
 import {
 	PiSignOut as signout,
@@ -15,12 +15,15 @@ import {
 	PiNotePencil as edit,
 	PiPencil as pencil,
 } from "react-icons/pi";
-import { LuWind as flow } from "react-icons/lu";
-import { GoPlus as add } from "react-icons/go";
+import { FaApple as apple } from "react-icons/fa";
+import { IoSettingsOutline as settings } from "react-icons/io5";
+import { LuWind as flow, LuUser as user, LuUsers as users} from "react-icons/lu";
+import { GoPlus as add, GoCreditCard as billing } from "react-icons/go";
 import { RxDotsHorizontal as menuDots } from "react-icons/rx";
 import { AiOutlineLoading3Quarters as loader } from "react-icons/ai";
 import { TbArrowsSort as sort } from "react-icons/tb";
 import { AiOutlineMail as email } from "react-icons/ai";
+import { FcGoogle as googleColored } from "react-icons/fc";
 import dynamic from "next/dynamic";
 const image = dynamic(
   () => import("react-icons/fa").then(m => m.FaImage),
@@ -46,7 +49,13 @@ const Icons = {
 	pencil,
 	sort,
 	image,
-	email
+	email,
+	user,
+	users,
+	settings,
+	billing,
+	googleColored,
+	apple
 };
 
 export default Icons;

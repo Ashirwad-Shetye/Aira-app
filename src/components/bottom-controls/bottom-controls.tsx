@@ -1,4 +1,4 @@
-"use client";
+ "use client";
 
 import React from "react";
 import GoFullscreenButton from "../ui/go-fullscreen-button";
