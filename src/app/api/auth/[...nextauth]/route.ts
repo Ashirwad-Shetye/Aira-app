@@ -5,6 +5,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import { supabase, supabaseAdmin } from "@/lib/supabase/client";
 import { uploadAvatarToSupabase } from "@/lib/server/upload-avatar-to-db";
+import { generateUniqueUsername } from "@/lib/generate-unique-username";
 
 const requiredEnvVars = [
   "GOOGLE_CLIENT_ID",
@@ -117,7 +118,8 @@ export const authOptions: AuthOptions = {
             console.error("Supabase lookup error:", lookupError.message);
           }
 
-          if (!existing) {
+          if ( !existing ) {
+            const username = await generateUniqueUsername(user.name || user.email.split("@")[0]);
             const { data: created, error: insertError } = await supabaseAdmin
               .from("users")
               .insert({
@@ -125,6 +127,7 @@ export const authOptions: AuthOptions = {
                 email: user.email,
                 full_name: user.name,
                 avatar_url: user.image,
+                username: username
               })
               .select("id")
               .single();

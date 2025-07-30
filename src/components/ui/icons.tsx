@@ -20,6 +20,7 @@ import { GoPlus as add } from "react-icons/go";
 import { RxDotsHorizontal as menuDots } from "react-icons/rx";
 import { AiOutlineLoading3Quarters as loader } from "react-icons/ai";
 import { TbArrowsSort as sort } from "react-icons/tb";
+import { AiOutlineMail as email } from "react-icons/ai";
 import dynamic from "next/dynamic";
 const image = dynamic(
   () => import("react-icons/fa").then(m => m.FaImage),
@@ -44,7 +45,8 @@ const Icons = {
 	edit,
 	pencil,
 	sort,
-	image
+	image,
+	email
 };
 
 export default Icons;
