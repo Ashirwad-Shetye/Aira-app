@@ -29,7 +29,37 @@ export default function TagInput({
 }: TagInputProps) {
 	const [input, setInput] = useState("");
 	const [open, setOpen] = useState(false);
+	const [dropdownPosition, setDropdownPosition] = useState<"top" | "bottom">(
+		"bottom"
+	);
 	const inputRef = useRef<HTMLInputElement>(null);
+	const commandRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		if (!open || !commandRef.current || !inputRef.current) return;
+
+		const handlePosition = () => {
+			const inputRect = inputRef.current!.getBoundingClientRect();
+			const viewportHeight = window.innerHeight;
+			const spaceBelow = viewportHeight - inputRect.bottom;
+			const spaceAbove = inputRect.top;
+
+			if (spaceAbove > spaceBelow && spaceAbove > 200) {
+				setDropdownPosition("top");
+			} else {
+				setDropdownPosition("bottom");
+			}
+		};
+
+		handlePosition();
+		window.addEventListener("resize", handlePosition);
+		window.addEventListener("scroll", handlePosition);
+
+		return () => {
+			window.removeEventListener("resize", handlePosition);
+			window.removeEventListener("scroll", handlePosition);
+		};
+	}, [open]);
 
 	const handleAddTag = (tag: string) => {
 		const cleaned = tag.trim();
@@ -67,8 +97,8 @@ export default function TagInput({
 			<div className='flex flex-wrap gap-2'>
 				{value.map((tag) => (
 					<Badge
-                        key={tag}
-                        variant="secondary"
+						key={tag}
+						variant='secondary'
 					>
 						<span>#{tag}</span>
 						<button
@@ -82,7 +112,11 @@ export default function TagInput({
 			</div>
 
 			<div className='relative'>
-				<Command className='border rounded'>
+				<Command
+					ref={commandRef}
+					className='border rounded'
+					style={{ zIndex: 50 }}
+				>
 					<CommandInput
 						ref={inputRef}
 						value={input}
@@ -97,7 +131,10 @@ export default function TagInput({
 						onBlur={() => setTimeout(() => setOpen(false), 100)}
 					/>
 					{open && (
-						<CommandGroup className='absolute top-10 z-10 w-full bg-white border shadow-lg overflow-y-auto max-h-[10rem]'>
+						<CommandGroup className={`absolute w-full bg-white border shadow-lg overflow-y-auto max-h-[12rem] z-[60] ${ dropdownPosition === "top"
+								? "bottom-full mb-1"
+								: "top-full mt-1"
+							}`}>
 							{filteredSuggestions.length > 0
 								? filteredSuggestions.map((tag) => (
 										<CommandItem

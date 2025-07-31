@@ -1,6 +1,6 @@
- "use client";
+"use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
 	Command,
 	CommandGroup,
@@ -10,12 +10,28 @@ import {
 import { X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
+export interface FriendSuggestion {
+	user_id: string;
+	username: string;
+	email: string;
+	avatar_url?: string;
+}
+
+export interface MemberEntry {
+	id?: string;
+	email: string;
+}
+
 interface MemberInputProps {
-	value: string[];
-	onChange: (members: string[]) => void;
-	suggestions?: string[];
+	value: MemberEntry[];
+	onChange: (members: MemberEntry[]) => void;
+	suggestions?: FriendSuggestion[];
 	maxMembers?: number;
 	placeholder?: string;
+}
+
+function isValidEmail(email: string): boolean {
+	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 export default function MemberInput({
@@ -27,47 +43,80 @@ export default function MemberInput({
 }: MemberInputProps) {
 	const [input, setInput] = useState("");
 	const [open, setOpen] = useState(false);
+	const [dropdownPosition, setDropdownPosition] = useState<"top" | "bottom">(
+		"bottom"
+	);
 	const inputRef = useRef<HTMLInputElement>(null);
+	const commandRef = useRef<HTMLDivElement>(null);
 
-	const handleAddMember = (email: string) => {
-		const cleaned = email.trim();
-		if (!cleaned || value.includes(cleaned) || value.length >= maxMembers)
+	useEffect(() => {
+		if (!open || !commandRef.current || !inputRef.current) return;
+
+		const handlePosition = () => {
+			const inputRect = inputRef.current!.getBoundingClientRect();
+			const viewportHeight = window.innerHeight;
+			const spaceBelow = viewportHeight - inputRect.bottom;
+			const spaceAbove = inputRect.top;
+
+			if (spaceAbove > spaceBelow && spaceAbove > 200) {
+				setDropdownPosition("top");
+			} else {
+				setDropdownPosition("bottom");
+			}
+		};
+
+		handlePosition();
+		window.addEventListener("resize", handlePosition);
+		window.addEventListener("scroll", handlePosition);
+
+		return () => {
+			window.removeEventListener("resize", handlePosition);
+			window.removeEventListener("scroll", handlePosition);
+		};
+	}, [open]);
+
+	const handleAddMember = (entry: MemberEntry) => {
+		if (
+			!entry.email.trim() ||
+			value.some((v) => v.email === entry.email) ||
+			value.length >= maxMembers
+		)
 			return;
-		onChange([...value, cleaned]);
+		onChange([...value, entry]);
 		setInput("");
 	};
 
 	const handleRemoveMember = (email: string) => {
-		onChange(value.filter((e) => e !== email));
+		onChange(value.filter((e) => e.email !== email));
 	};
 
 	const filteredSuggestions = suggestions.filter(
 		(s) =>
-			(input.trim() === ""
-				? true
-				: s.toLowerCase().includes(input.toLowerCase())) && !value.includes(s)
+			(input.trim() === "" ||
+				s.username?.toLowerCase().includes(input.toLowerCase()) ||
+				s.email?.toLowerCase().includes(input.toLowerCase())) &&
+			!value.some((v) => v.email === s.email)
 	);
 
 	const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
 		if (e.key === "Enter" && input.trim()) {
 			e.preventDefault();
-			handleAddMember(input);
+			if (isValidEmail(input)) {
+				handleAddMember({ email: input.trim() });
+			}
 		} else if (e.key === "Backspace" && !input && value.length > 0) {
-			handleRemoveMember(value[value.length - 1]);
+			handleRemoveMember(value[value.length - 1].email);
 		}
 	};
 
 	return (
 		<div className='w-full flex flex-col gap-2'>
 			<div className='flex flex-wrap gap-2'>
-				{value.map((email) => (
-					<Badge
-						key={email}
-						variant='secondary'
-					>
-						<span>{email}</span>
+				{value.map((member) => (
+					<Badge key={member.email} variant='secondary'>
+						<span>{member.email}</span>
 						<button
-							onClick={() => handleRemoveMember(email)}
+							onClick={() => handleRemoveMember(member.email)}
 							className='hover:text-destructive cursor-pointer ml-1'
 						>
 							<X className='h-3 w-3' />
@@ -77,13 +126,13 @@ export default function MemberInput({
 			</div>
 
 			<div className='relative'>
-				<Command className='border rounded'>
+				<Command ref={commandRef} className='border rounded' style={{ zIndex: 50 }}>
 					<CommandInput
 						ref={inputRef}
 						value={input}
-						onValueChange={(value) => {
-							setInput(value);
-							setOpen(value.length > 0);
+						onValueChange={(val) => {
+							setInput(val);
+							setOpen(val.length > 0);
 						}}
 						onKeyDown={handleKeyDown}
 						placeholder={placeholder}
@@ -92,34 +141,55 @@ export default function MemberInput({
 						onBlur={() => setTimeout(() => setOpen(false), 100)}
 					/>
 					{open && (
-						<CommandGroup className='absolute top-10 z-10 w-full bg-white border shadow-lg overflow-y-auto max-h-[10rem]'>
-							{filteredSuggestions.length > 0
-								? filteredSuggestions.map((email) => (
-										<CommandItem
-											key={email}
-											onSelect={() => {
-												handleAddMember(email);
-												setOpen(false);
-												inputRef.current?.focus();
-											}}
-											className='cursor-pointer'
-										>
-											{email}
-										</CommandItem>
-								  ))
-								: input.trim() &&
-								  !value.includes(input.trim()) && (
-										<CommandItem
-											onSelect={() => {
-												handleAddMember(input);
-												setOpen(false);
-												inputRef.current?.focus();
-											}}
-											className='cursor-pointer'
-										>
-											Add "{input}"
-										</CommandItem>
-								  )}
+						<CommandGroup
+							className={`absolute w-full bg-white border shadow-lg overflow-y-auto max-h-[12rem] z-[60] ${
+								dropdownPosition === "top"
+									? "bottom-full mb-1"
+								: "top-full mt-1"
+							}`}
+						>
+							{filteredSuggestions.length > 0 ? (
+								filteredSuggestions.map( ( friend ) => (
+									<CommandItem
+										key={friend.email}
+										onSelect={() => {
+											handleAddMember( { id: friend.user_id, email: friend.email } );
+											setOpen( false );
+											inputRef.current?.focus();
+										}}
+										className='cursor-pointer flex items-center gap-3 py-2'
+									>
+										<img
+											src={friend.avatar_url || "/default-avatar.png"}
+											alt={friend.username || "Friend"}
+											width={24}
+											height={24}
+											className='rounded-full'
+										/>
+										<div className='flex flex-col'>
+											<p className='text-sm font-medium'>{friend.username}</p>
+											<p className='text-xs text-muted-foreground'>
+												{friend.email}
+											</p>
+										</div>
+									</CommandItem>
+								) )
+							) : input.trim() && isValidEmail( input ) && !value.some( ( v ) => v.email === input ) ? (
+								<CommandItem
+									onSelect={() => {
+										handleAddMember( { email: input.trim() } );
+										setOpen( false );
+										inputRef.current?.focus();
+									}}
+									className='cursor-pointer text-primary'
+								>
+									Invite “{input}”
+								</CommandItem>
+							) : (
+								<CommandItem disabled className='text-muted-foreground'>
+									No friends found. Add a valid email to invite.
+								</CommandItem>
+							)}
 						</CommandGroup>
 					)}
 				</Command>

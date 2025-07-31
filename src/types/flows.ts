@@ -10,7 +10,14 @@ export type Flow = {
 	last_activity?: string;
 	moment_count?: number;
 	unread_count?: number;
-	role?: 'owner' | 'member';
+	role?: 'owner' | 'member' | "pending";
 	owner_id?: string;
-	is_shared?: boolean;
+	members?: SharedFlowMembers[]
 };
+
+export type SharedFlowMembers = {
+	id: string,
+	email: string,
+	role: 'owner' | 'member' | "pending";
+	avatar_url?: string
+}

@@ -1,7 +1,7 @@
  "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { supabase } from "@/lib/supabase/client";
 import { Flow } from "@/types/flows";
@@ -27,6 +27,8 @@ import { Badge } from "@/components/ui/badge";
 
 export default function FlowIdPage() {
 	const { flowId } = useParams();
+	const searchParams = useSearchParams();
+	const type = searchParams.get("type");
 	const router = useRouter();
 	const { data: session, status } = useSession();
 
@@ -52,17 +54,30 @@ export default function FlowIdPage() {
 		const fetchFlow = async () => {
 			setFlowLoading(true);
 			try {
-				const { data, error } = await supabase
-					.from("flows")
-					.select(
-						"id, title, bio, created_at, user_id, cover_photo_url, cover_photo_blurhash, tags"
-					)
-					.eq("id", flowId)
-					.single();
+				let data, error;
+
+				if (type === "shared") {
+					({ data, error } = await supabase
+						.from("shared_flows")
+						.select(
+							"id, title, bio, created_at, user_id, cover_photo_url, cover_photo_blurhash, tags"
+						)
+						.eq("id", flowId)
+						.single());
+				} else {
+					({ data, error } = await supabase
+						.from("flows")
+						.select(
+							"id, title, bio, created_at, user_id, cover_photo_url, cover_photo_blurhash, tags"
+						)
+						.eq("id", flowId)
+						.single());
+				}
+
 				if (error || !data) throw error || new Error("Flow not found");
 				setFlow(data);
 			} catch (err: any) {
-				console.error("\u274C Error loading flow:", err.message);
+				console.error("❌ Error loading flow:", err.message);
 				setError("Failed to load flow.");
 				toast.error("Failed to load flow.");
 			} finally {
@@ -71,7 +86,7 @@ export default function FlowIdPage() {
 		};
 
 		fetchFlow();
-	}, [flowId, status, session?.user?.id]);
+	}, [flowId, status, session?.user?.id, type]);
 
 	useEffect(() => {
 		if (!flowId || typeof flowId !== "string" || !flow) return;

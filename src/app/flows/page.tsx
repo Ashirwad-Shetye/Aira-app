@@ -15,6 +15,8 @@ import { ConfirmDialog } from "@/components/custom-alert-dialog/confirm-dialog";
 import { toast } from "sonner";
 import { SortByComboBox } from "@/components/combo-box/sort-by-combo-box";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { MemberEntry } from "@/components/member-input/member-input";
 
 const Flows = () => {
 	const [flows, setFlows] = useState<Flow[]>([]);
@@ -206,36 +208,176 @@ const Flows = () => {
 		}
 	};
 
-	async function handleSaveFlow(data: {
+	const handleSaveFlow = async(data: {
 		id?: string;
 		title: string;
 		bio?: string;
 		tags?: string[];
-	}) {
-		if (!data.id) return;
+		memberIds?: MemberEntry[];
+		inviteEmails?: string[];
+		type?: "personal" | "shared" | "couple";
+	}) => {
+		if (!data.id || !session?.user?.id) return;
+
 		setIsLoading(true);
 		setError(null);
-		const { error } = await supabase
-			.from("flows")
-			.update({ title: data.title, bio: data.bio, tags: data.tags ?? [] })
-			.eq("id", data.id);
-		if (error) {
-			setError(error.message);
+
+		try {
+			if (data.type === "personal") {
+				// Update personal flow
+				const { error } = await supabase
+					.from("flows")
+					.update({
+						title: data.title,
+						bio: data.bio ?? "",
+						tags: data.tags ?? [],
+						updated_at: new Date().toISOString(),
+					})
+					.eq("id", data.id)
+					.eq("user_id", session.user.id);
+
+				if (error) {
+					console.error("❌ Error updating personal flow:", error);
+					setError(error.message);
+					toast.error("Failed to update personal flow.");
+					return;
+				}
+			} else {
+				// Update shared flow
+				const { error: flowError } = await supabase
+					.from("shared_flows")
+					.update({
+						title: data.title,
+						bio: data.bio ?? "",
+						tags: data.tags ?? [],
+						updated_at: new Date().toISOString(),
+					})
+					.eq("id", data.id)
+					.eq("user_id", session.user.id); // make sure ownership is checked
+
+				if (flowError) {
+					console.error("❌ Error updating shared flow:", flowError);
+					setError(flowError.message);
+					toast.error("Failed to update shared flow.");
+					return;
+				}
+
+				// ➤ Clean inputs
+				const memberEntries = data.memberIds ?? [];
+				const inviteEmails = data.inviteEmails ?? [];
+				const currentUserId = session.user.id;
+
+				// ➤ Fetch existing participants
+				const { data: existingParticipants, error: fetchParticipantsError } =
+					await supabase
+						.from("shared_flow_participants")
+						.select("user_id, email, role")
+						.eq("flow_id", data.id);
+
+				if (fetchParticipantsError) {
+					console.error(
+						"⚠️ Failed to fetch existing participants:",
+						fetchParticipantsError
+					);
+					toast.error("Failed to fetch existing participants.");
+					return;
+				}
+
+				const existingUserIds = existingParticipants
+					.filter((p) => p.user_id)
+					.map((p) => p.user_id as string);
+
+				const existingEmails = existingParticipants
+					.filter((p) => p.email)
+					.map((p) => p.email as string);
+
+				// ➤ Calculate new and removed participants
+				const newMemberIds = memberEntries.filter(
+					(m) => m.id !== currentUserId && !existingUserIds.includes(m.id ?? "")
+				);
+
+				const newInviteEmails = inviteEmails.filter(
+					(email) => !existingEmails.includes(email)
+				);
+
+				const removedUserIds = existingUserIds.filter(
+					(uid) =>
+						uid !== currentUserId && !memberEntries.some((m) => m.id === uid)
+				);
+
+				const removedEmails = existingEmails.filter(
+					(email) => !inviteEmails.includes(email)
+				);
+
+				// ➤ Delete removed participants
+				if (removedUserIds.length > 0) {
+					const { error: deleteUsersError } = await supabase
+						.from("shared_flow_participants")
+						.delete()
+						.eq("flow_id", data.id)
+						.in("user_id", removedUserIds);
+
+					if (deleteUsersError) {
+						console.error("⚠️ Failed to remove participants:", deleteUsersError);
+						toast.error("Failed to remove some participants.");
+					}
+				}
+
+				if (removedEmails.length > 0) {
+					const { error: deleteEmailsError } = await supabase
+						.from("shared_flow_participants")
+						.delete()
+						.eq("flow_id", data.id)
+						.in("email", removedEmails);
+
+					if (deleteEmailsError) {
+						console.error(
+							"⚠️ Failed to remove invite emails:",
+							deleteEmailsError
+						);
+						toast.error("Failed to remove some email invites.");
+					}
+				}
+
+				// ➤ Insert new participants
+				const newRows = [
+					...newMemberIds.map((m) => ({
+						flow_id: data.id,
+						user_id: m.id,
+						email: m.email,
+						role: "pending",
+					})),
+					...newInviteEmails.map((email) => ({
+						flow_id: data.id,
+						email,
+						role: "pending",
+					})),
+				];
+
+				if (newRows.length > 0) {
+					const { error: insertError } = await supabase
+						.from("shared_flow_participants")
+						.insert(newRows);
+
+					if (insertError) {
+						console.error("⚠️ Failed to add new participants:", insertError);
+						toast.error("Failed to add new participants.");
+					}
+				}
+			}
+
+			toast.success("Flow updated successfully.");
+			setDialogOpen(false);
+			setEditFlow(null);
+			hasFetchedTagsRef.current = false;
+			await fetchAllTags();
+		} catch (err: any) {
+			console.error("❌ Error during flow update:", err.message);
+			setError(err.message);
+			toast.error("An unexpected error occurred.");
+		} finally {
 			setIsLoading(false);
-			return;
 		}
-		setFlows((prev) =>
-			prev.map((f) =>
-				f.id === data.id
-					? { ...f, title: data.title, bio: data.bio, tags: data.tags }
-					: f
-			)
-		);
-		setDialogOpen(false);
-		setEditFlow(null);
-		setIsLoading(false);
-		hasFetchedTagsRef.current = false;
-		await fetchAllTags();
 	}
 
 	const latestActivityTimestamp = flows.reduce(
@@ -323,9 +465,14 @@ const Flows = () => {
 						) : (
 							<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-10'>
 								{flows.length === 0 ? (
-									<p aria-live='polite'>
-										No flows found. Create one to get started!
-									</p>
+									<Card onClick={() => setDialogOpen(!dialogOpen)} className='bg-muted col-span-1 md:col-span-2 lg:col-span-3 cursor-pointer'>
+										<CardContent className='flex flex-col items-center justify-center h-32 text-muted-foreground p-6'>
+											<Icons.flow className='h-8 w-8 mb-2 text-muted-foreground/50' />
+											<p aria-live='polite'>
+												No flows found. Create one to get started!
+											</p>
+										</CardContent>
+									</Card>
 								) : (
 									flows
 										.filter((flow) =>

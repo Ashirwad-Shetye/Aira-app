@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import {
 	Dialog,
@@ -16,7 +16,7 @@ import { useState, useTransition, useEffect, ReactElement } from "react";
 import { createFlow } from "@/lib/data/create-flow";
 import { Flow } from "@/types/flows";
 import TagInput from "../tag-input/tag-input";
-import MemberInput from "../member-input/member-input";
+import MemberInput, { FriendSuggestion, MemberEntry } from "../member-input/member-input";
 import { supabase } from "@/lib/supabase/client";
 import { useSession } from "next-auth/react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -30,7 +30,11 @@ export interface NewFlowDialogProps {
 		title: string;
 		bio?: string;
 		tags?: string[];
-		members?: string[];
+		memberIds?: {
+			id: string;
+			email: string;
+		}[];
+		inviteEmails?: string[];
 		type?: "personal" | "shared" | "couple";
 	}) => void;
 	children?: ReactElement;
@@ -46,65 +50,107 @@ export function NewFlowDialog(props: NewFlowDialogProps = {}) {
 		children,
 		clearOnClose = true,
 	} = props;
+
 	const [title, setTitle] = useState<string>(flow?.title || "Untitled Flow");
 	const [bio, setBio] = useState<string>(flow?.bio || "");
-	const [isPending, startTransition] = useTransition();
 	const [tags, setTags] = useState<string[]>(flow?.tags ?? []);
-	const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
+	const [members, setMembers] = useState<MemberEntry[]>([]); // this stores emails
 	const [flowType, setFlowType] = useState<"personal" | "shared" | "couple">(
 		"personal"
 	);
-	const [members, setMembers] = useState<string[]>([]);
+	const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
+	const [friendSuggestions, setFriendSuggestions] = useState<
+		FriendSuggestion[]
+	>([]);
+	const [isPending, startTransition] = useTransition();
 	const { data: session } = useSession();
 
 	useEffect(() => {
 		if (flow) {
 			setTitle(flow.title || "Untitled Flow");
 			setBio(flow.bio || "");
-			setTags(flow?.tags ?? []);
+			setTags(flow.tags ?? []);
 		} else {
 			setTitle("Untitled Flow");
 			setBio("");
+			setTags([]);
+			setMembers([]);
+			setFlowType("personal");
 		}
 	}, [flow]);
 
 	useEffect(() => {
 		const fetchSuggestedTags = async () => {
 			if (!session?.user?.id) return;
-
 			const { data, error } = await supabase.rpc("get_user_flow_tags", {
 				user_id_input: session.user.id,
 			});
-
-			if (error) {
-				console.error("Error fetching tags:", error);
-			} else {
-				setSuggestedTags(data ?? []);
-			}
+			if (!error && data) setSuggestedTags(data);
 		};
-
 		fetchSuggestedTags();
 	}, [session]);
 
-	function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+	useEffect(() => {
+		const fetchFriends = async () => {
+			if (!session?.user?.id || flowType === "personal") return;
+
+			const { data, error } = await supabase
+				.from("friends")
+				.select("friend:friend_id(username, email, avatar_url, id)")
+				.eq("user_id", session.user.id);
+
+			if (error || !data) return;
+
+			const formatted: FriendSuggestion[] = data.map((f: any) => ({
+				username: f.friend.username,
+				email: f.friend.email,
+				avatar_url: f.friend.avatar_url || undefined,
+				user_id: f.friend.id,
+			}));
+
+			setFriendSuggestions(formatted);
+		};
+
+		fetchFriends();
+	}, [session?.user?.id, flowType]);
+
+	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 		if (!title.trim()) return;
-		const data = {
+
+		const memberIds: {
+			id: string;
+			email: string;
+		}[] = [];
+		const inviteEmails: string[] = [];
+
+		members.forEach((email) => {
+			const match = friendSuggestions.find((s) => s.email === email.email);
+			if ( match?.user_id ) memberIds.push( {
+				id: match.user_id,
+				email: match.email
+			});
+			else inviteEmails.push(email.email);
+		});
+
+		const payload = {
 			id: flow?.id,
 			title: title.trim(),
 			bio: bio.trim(),
 			tags,
-			members: flowType !== "personal" ? members : [],
+			memberIds: flowType !== "personal" ? memberIds : [],
+			inviteEmails: flowType !== "personal" ? inviteEmails : [],
 			type: flowType,
 		};
-		if (onSave) {
-			startTransition(() => onSave(data));
-		} else {
-			startTransition(() => {
-				createFlow({ title: data.title, bio: data.bio });
-			});
-		}
-	}
+
+		startTransition(() => {
+			if (onSave) {
+				onSave(payload);
+			} else {
+				createFlow(payload);
+			}
+		});
+	};
 
 	const handleOnClose = () => {
 		if (clearOnClose) {
@@ -127,21 +173,19 @@ export function NewFlowDialog(props: NewFlowDialogProps = {}) {
 				className='w-[50rem] max-w-[90%] max-h-[80%] overflow-y-auto'
 				role='dialog'
 			>
-				<DialogTitle id='dialog-title'>
+				<DialogTitle>
 					<Icons.flow />
 					<p>{flow ? "Edit flow" : "Create new flow"}</p>
 				</DialogTitle>
 				<DialogHeader>
-					<DialogDescription
-						id='dialog-description'
-						className='text-xs'
-					>
+					<DialogDescription className='text-xs'>
 						Flows hold your thoughts over time. Set one up and begin writing
 						your Moments.
 					</DialogDescription>
 				</DialogHeader>
 				<form onSubmit={handleSubmit}>
 					<div className='grid gap-4 my-3'>
+						{/* Flow Type */}
 						<div className='grid gap-2'>
 							<label className='text-sm'>Flow Type</label>
 							<p className='text-xs text-muted-foreground'>
@@ -186,49 +230,57 @@ export function NewFlowDialog(props: NewFlowDialogProps = {}) {
 									"Just for you and your partner — a shared space to connect and express privately."}
 							</p>
 						</div>
+
+						{/* Title */}
 						<div className='grid gap-2'>
-							<div className='flex flex-col gap-1'>
-								<label
-									htmlFor='flow-name-1'
-									className='text-sm'
-								>
-									Flow Title
-								</label>
-								<p className='text-xs text-muted-foreground'>
-									This is the name of your Flow — think of it like a personal
-									journal.
-								</p>
-							</div>
+							<label
+								htmlFor='flow-name-1'
+								className='text-sm'
+							>
+								Flow Title
+							</label>
+							<p className='text-xs text-muted-foreground'>
+								This is the name of your Flow — think of it like a personal
+								journal.
+							</p>
 							<input
 								id='flow-name-1'
-								name='flow-name'
-								placeholder='e.g. Morning Reflections, Letters to Myself'
 								value={title}
-								maxLength={100}
 								onChange={(e) => setTitle(e.currentTarget.value)}
+								maxLength={100}
 								className='px-3 py-1 text-sm border rounded focus:ring-0 outline-none'
+								placeholder='e.g. Morning Reflections, Letters to Myself'
 							/>
-							<p className='text-xs text-gray-700 text-right'>
+							<p className='text-xs text-right text-gray-600'>
 								({title.length} / 100)
 							</p>
 						</div>
 
+						{/* Bio */}
 						<div className='grid gap-2'>
 							<label className='text-sm'>About this Flow (optional)</label>
+							<p className='text-xs text-muted-foreground'>
+								Add a short description about this flow.
+							</p>
 							<textarea
-								placeholder='e.g. A space to write honestly each morning'
 								value={bio}
-								maxLength={300}
 								onChange={(e) => setBio(e.currentTarget.value)}
+								maxLength={300}
 								className='px-3 py-1 h-20 text-sm border rounded focus:ring-0 outline-none'
+								placeholder='e.g. A space to write honestly each morning'
 							/>
-							<p className='text-xs text-gray-700 text-right'>
+							<p className='text-xs text-right text-gray-600'>
 								({bio.length} / 300)
 							</p>
 						</div>
 
+						{/* Tags */}
 						<div className='grid gap-2'>
 							<label className='text-sm'>Tags (optional)</label>
+							<p className='text-xs text-muted-foreground'>
+								Enter your own tags or select from the list. Type the tag and
+								press enter to add.
+							</p>
 							<TagInput
 								value={tags}
 								onChange={setTags}
@@ -237,26 +289,32 @@ export function NewFlowDialog(props: NewFlowDialogProps = {}) {
 							/>
 						</div>
 
+						{/* Members */}
 						{flowType !== "personal" && (
 							<div className='grid gap-2'>
 								<label className='text-sm'>
-									{flowType === "couple"
-										? "Partner Email (optional - can be added later)"
-										: "Add Members (optional - can be added later)"}
+									{flowType === "couple" ? "Partner Email" : "Add Members"}
 								</label>
+								<p className='text-xs text-muted-foreground'>
+									{flowType === "couple"
+										? "Add partner's email or username with whom you want to share this flow"
+										: "Add member emails or username with whom you want to share this flow"}
+								</p>
 								<MemberInput
 									value={members}
 									onChange={setMembers}
+									suggestions={friendSuggestions}
 									placeholder={
 										flowType === "couple"
-											? "Enter partner's email..."
-											: "Enter member emails..."
+											? "Enter partner's email or username..."
+											: "Enter member emails or username..."
 									}
 									maxMembers={flowType === "couple" ? 1 : 4}
 								/>
 							</div>
 						)}
 					</div>
+
 					<DialogFooter>
 						<DialogClose asChild>
 							<Button
