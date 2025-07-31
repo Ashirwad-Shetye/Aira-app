@@ -109,7 +109,9 @@ const FlowCard = ( { flow, latestFlow, onEdit, onDelete }: Props ) => {
 						<div className='flex items-center justify-between text-sm cursor-default'>
 							<p className='text-xs text-gray-500'>
 								Last activity:{" "}
-								{flow.last_activity ? formatDate(flow.last_activity) : "—"}
+								{flow.last_activity
+									? formatDate(flow.last_activity)
+									: flow.updated_at ? formatDate(flow.updated_at) : "N/A"}
 							</p>
 						</div>
 						<div className='flex items-center gap-2'>

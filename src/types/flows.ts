@@ -13,6 +13,7 @@ export type Flow = {
 	role?: 'owner' | 'member' | "pending";
 	owner_id?: string;
 	members?: SharedFlowMembers[]
+	type?: 'personal' | 'shared' | 'couple';
 };
 
 export type SharedFlowMembers = {

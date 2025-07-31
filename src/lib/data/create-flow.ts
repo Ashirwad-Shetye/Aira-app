@@ -24,12 +24,13 @@ export async function createFlow({
 }) {
   const session = await getServerSession(authOptions);
   const userId = session?.user?.id;
-  const userEmail = session?.user.email
+  const userEmail = session?.user?.email;
 
   if (!userId || !userEmail) {
     redirect("/login");
   }
 
+  // ➤ Personal Flow
   if (type === "personal") {
     const { data, error } = await supabase
       .from("flows")
@@ -39,7 +40,6 @@ export async function createFlow({
           title,
           bio: bio ?? "",
           tags: tags ?? [],
-          participants: [userId],
         },
       ])
       .select()
@@ -50,66 +50,77 @@ export async function createFlow({
       throw new Error("Failed to create personal flow");
     }
 
-    redirect(`/flows/${data.id}`);
+    return redirect(`/flows/${data.id}`);
   } else {
+
+    // ➤ Shared / Couple Flow
     const { data: flow, error: flowError } = await supabase
       .from("shared_flows")
       .insert([
         {
           user_id: userId,
-          title: title,
+          title,
           bio: bio ?? "",
           tags: tags ?? [],
         },
       ])
       .select()
       .single();
-    console.log("Inserted shared flow:", { flow, flowError });
+  
     if (flowError || !flow?.id) {
       console.error("❌ Error creating shared flow:", flowError);
       throw new Error("Failed to create shared flow");
     }
-
-    const participantIds = members.filter((user) => user.id !== userId);
-
+  
+    // ➤ Build participant rows
     const participantRows = [
-      { flow_id: flow.id, user_id: userId, role: "owner" },
-      ...participantIds.map((uid) => ({
+      {
         flow_id: flow.id,
-        user_id: uid.id,
-        email: uid.email,
+        user_id: userId,
+        email: userEmail,
+        role: "owner",
+      },
+      ...members
+        .filter((m) => m.id !== userId)
+        .map((m) => ({
+          flow_id: flow.id,
+          user_id: m.id,
+          email: m.email,
+          role: "pending",
+        })),
+      ...inviteEmails.map((email) => ({
+        flow_id: flow.id,
+        email,
         role: "pending",
       })),
     ];
-
-    const { error: insertError } = await supabase
+  
+    // ➤ Insert participants
+    const { error: insertParticipantsError } = await supabase
       .from("shared_flow_participants")
       .insert(participantRows);
-
-    if (insertError) {
-      console.error("⚠️ Failed to insert participants:", insertError);
+  
+    if (insertParticipantsError) {
+      console.error("⚠️ Failed to insert participants:", insertParticipantsError);
+      // Don’t throw — just log it
     }
-
-    const emailParticipantRows = inviteEmails.map((email) => ({
-      flow_id: flow.id,
-      email,
-      role: "pending",
-    }));
-
-    const { error: insertEmailError } = await supabase
-      .from("shared_flow_participants")
-      .insert(emailParticipantRows);
-
-    if (insertEmailError) {
-      console.error("⚠️ Failed to insert email-based participants:", insertEmailError);
+  
+    // ➤ Insert creator into shared_flow_members for unread tracking
+    const { error: memberError } = await supabase
+      .from("shared_flow_members")
+      .insert([
+        {
+          flow_id: flow.id,
+          user_id: userId,
+          last_read_at: new Date().toISOString(),
+        },
+      ]);
+  
+    if (memberError) {
+      console.error("⚠️ Failed to insert shared_flow_member for creator:", memberError);
     }
-
-    await supabase.from("shared_flow_members").insert({
-      flow_id: flow.id,
-      user_id: userId,
-      last_read_at: new Date().toISOString(),
-    });
-
-    redirect(`/flows/${flow.id}?type=shared`);
+  
+    return redirect(`/flows/${flow.id}?type=shared`);
   }
+
 }

@@ -16,10 +16,19 @@ import { useState, useTransition, useEffect, ReactElement } from "react";
 import { createFlow } from "@/lib/data/create-flow";
 import { Flow } from "@/types/flows";
 import TagInput from "../tag-input/tag-input";
-import MemberInput, { FriendSuggestion, MemberEntry } from "../member-input/member-input";
+import MemberInput, {
+	FriendSuggestion,
+	MemberEntry,
+} from "../member-input/member-input";
 import { supabase } from "@/lib/supabase/client";
 import { useSession } from "next-auth/react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export interface NewFlowDialogProps {
 	flow?: Flow;
@@ -54,9 +63,9 @@ export function NewFlowDialog(props: NewFlowDialogProps = {}) {
 	const [title, setTitle] = useState<string>(flow?.title || "Untitled Flow");
 	const [bio, setBio] = useState<string>(flow?.bio || "");
 	const [tags, setTags] = useState<string[]>(flow?.tags ?? []);
-	const [members, setMembers] = useState<MemberEntry[]>([]); // this stores emails
+	const [members, setMembers] = useState<MemberEntry[]>([]);
 	const [flowType, setFlowType] = useState<"personal" | "shared" | "couple">(
-		"personal"
+		flow?.type ?? "personal"
 	);
 	const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
 	const [friendSuggestions, setFriendSuggestions] = useState<
@@ -65,12 +74,17 @@ export function NewFlowDialog(props: NewFlowDialogProps = {}) {
 	const [isPending, startTransition] = useTransition();
 	const { data: session } = useSession();
 
+	const isEdit = !!flow;
+
 	useEffect(() => {
 		if (flow) {
 			setTitle(flow.title || "Untitled Flow");
 			setBio(flow.bio || "");
 			setTags(flow.tags ?? []);
+
+			setFlowType(flow.type ?? "personal");
 		} else {
+			// If creating new
 			setTitle("Untitled Flow");
 			setBio("");
 			setTags([]);
@@ -126,11 +140,14 @@ export function NewFlowDialog(props: NewFlowDialogProps = {}) {
 
 		members.forEach((email) => {
 			const match = friendSuggestions.find((s) => s.email === email.email);
-			if ( match?.user_id ) memberIds.push( {
-				id: match.user_id,
-				email: match.email
-			});
-			else inviteEmails.push(email.email);
+			if (match?.user_id) {
+				memberIds.push({
+					id: match.user_id,
+					email: match.email,
+				});
+			} else {
+				inviteEmails.push(email.email);
+			}
 		});
 
 		const payload = {
@@ -183,6 +200,7 @@ export function NewFlowDialog(props: NewFlowDialogProps = {}) {
 						your Moments.
 					</DialogDescription>
 				</DialogHeader>
+
 				<form onSubmit={handleSubmit}>
 					<div className='grid gap-4 my-3'>
 						{/* Flow Type */}
@@ -193,33 +211,47 @@ export function NewFlowDialog(props: NewFlowDialogProps = {}) {
 								someone close, or as a group.
 							</p>
 
-							<ToggleGroup
-								type='single'
-								value={flowType}
-								onValueChange={(val: string) =>
-									setFlowType((val as typeof flowType) ?? "personal")
-								}
-								className='w-full'
-							>
-								<ToggleGroupItem
-									value='personal'
-									className='border'
-								>
-									Personal
-								</ToggleGroupItem>
-								<ToggleGroupItem
-									value='shared'
-									className='border-t border-b'
-								>
-									Shared
-								</ToggleGroupItem>
-								<ToggleGroupItem
-									value='couple'
-									className='border'
-								>
-									Couple
-								</ToggleGroupItem>
-							</ToggleGroup>
+							<TooltipProvider>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<div>
+											<ToggleGroup
+												type='single'
+												value={flowType}
+												onValueChange={(val: string) => {
+													if (!isEdit)
+														setFlowType((val as typeof flowType) ?? "personal");
+												}}
+												className='w-full'
+											>
+												<ToggleGroupItem
+													value='personal'
+													className='border'
+												>
+													Personal
+												</ToggleGroupItem>
+												<ToggleGroupItem
+													value='shared'
+													className='border-t border-b'
+												>
+													Shared
+												</ToggleGroupItem>
+												<ToggleGroupItem
+													value='couple'
+													className='border'
+												>
+													Couple
+												</ToggleGroupItem>
+											</ToggleGroup>
+										</div>
+									</TooltipTrigger>
+									{isEdit && (
+										<TooltipContent side='top'>
+											Cannot change flow type once created.
+										</TooltipContent>
+									)}
+								</Tooltip>
+							</TooltipProvider>
 
 							<p className='text-xs text-primary'>
 								{flowType === "personal" &&

@@ -82,7 +82,11 @@ const Flows = () => {
 				supabase.rpc("get_shared_flows_with_moment_data", {
 					user_id_input: session?.user.id,
 				}),
-			]);
+			] );
+			console.log("Calling RPC with user ID:", session?.user?.id);
+			
+			console.log(personalFlowsRes.data);
+			console.log(sharedFlowsRes.data);
 
 			if (personalFlowsRes.error || sharedFlowsRes.error) {
 				throw new Error(
@@ -94,12 +98,12 @@ const Flows = () => {
 
 			const personalFlows = (personalFlowsRes.data ?? []).map((f: Flow) => ({
 				...f,
-				is_shared: false,
+				type: "personal",
 			}));
 
 			const sharedFlows = (sharedFlowsRes.data ?? []).map((f: Flow) => ({
 				...f,
-				is_shared: true,
+				type: f.type ?? "shared",
 			}));
 
 			const combined = [...personalFlows, ...sharedFlows];
