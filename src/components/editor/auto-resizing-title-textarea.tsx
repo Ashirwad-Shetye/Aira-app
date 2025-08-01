@@ -1,11 +1,12 @@
 import React, { useRef, useEffect } from "react";
 
 type AutoResizingTitleTextareaProps = {
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  maxLength?: number;
-  className?: string;
+	value: string;
+	onChange: (value: string) => void;
+	readOnly?: boolean;
+	placeholder?: string;
+	maxLength?: number;
+	className?: string;
 };
 
 const AutoResizingTitleTextarea: React.FC<AutoResizingTitleTextareaProps> = ({
@@ -14,6 +15,7 @@ const AutoResizingTitleTextarea: React.FC<AutoResizingTitleTextareaProps> = ({
   placeholder = "Your moment title...",
   maxLength = 300,
   className = "",
+  readOnly
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -25,16 +27,17 @@ const AutoResizingTitleTextarea: React.FC<AutoResizingTitleTextareaProps> = ({
   }, [value]);
 
   return (
-    <textarea
-      ref={textareaRef}
-      placeholder={placeholder}
-      className={`text-3xl font-libre font-semibold w-full min-h-fit h-fit resize-none text-wrap focus:outline-none px-10 overflow-hidden ${className}`}
-      value={value}
-      maxLength={maxLength}
-      rows={1}
-      onChange={e => onChange(e.target.value)}
-    />
-  );
+		<textarea
+			ref={textareaRef}
+			placeholder={placeholder}
+			className={`text-3xl font-libre font-semibold w-full min-h-fit h-fit resize-none text-wrap focus:outline-none px-10 overflow-hidden ${className}`}
+			value={value}
+			maxLength={maxLength}
+			rows={1}
+			readOnly={readOnly}
+			onChange={(e) => onChange(e.target.value)}
+		/>
+	);
 };
 
 export default AutoResizingTitleTextarea; 

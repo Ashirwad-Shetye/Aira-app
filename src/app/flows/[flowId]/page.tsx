@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -24,6 +24,8 @@ import Image from "next/image";
 import { SortByComboBox } from "@/components/combo-box/sort-by-combo-box";
 import { NewFlowDialog } from "@/components/new-flow-dialog/new-flow-dialog";
 import { Badge } from "@/components/ui/badge";
+import { MemberEntry } from "@/components/member-input/member-input";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function FlowIdPage() {
 	const { flowId } = useParams();
@@ -42,49 +44,97 @@ export default function FlowIdPage() {
 	const [renameDialogOpen, setRenameDialogOpen] = useState(false);
 	const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 	const [selectedMoment, setSelectedMoment] = useState<Moment | null>(null);
-	const [ deletingIds, setDeletingIds ] = useState<Set<string>>( new Set() );
-	const [ coverDialogOpen, setCoverDialogOpen ] = useState<boolean>( false )
-	const [ sortByValue, setSortByValue ] = useState( "last edited" );
+	const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+	const [coverDialogOpen, setCoverDialogOpen] = useState<boolean>(false);
+	const [sortByValue, setSortByValue] = useState("last edited");
 	const [dialogOpen, setDialogOpen] = useState(false);
+
+	const canEdit =
+		flow && session?.user?.id
+			? flow.type === "personal"
+				? true
+				: flow.members?.some(
+						(member) => member.id === session.user.id && member.role === "owner"
+				  ) ?? false
+			: false;
+	
+	const fetchFlow = async () => {
+		setFlowLoading(true);
+		try {
+			let data: any, error;
+
+			if (type === "shared" || type === "couple") {
+				({ data, error } = await supabase
+					.from("shared_flows")
+					.select(
+						`
+							id,
+							title,
+							bio,
+							created_at,
+							updated_at,
+							user_id,
+							cover_photo_url,
+							cover_photo_blurhash,
+							tags,
+							participants:shared_flow_participants (
+								user_id,
+								email,
+								role,
+								users (
+								username,
+								avatar_url
+								)
+							)
+							`
+					)
+					.eq("id", flowId)
+					.single());
+
+				if (error || !data) throw error || new Error("Flow not found");
+
+				const members =
+					data.participants?.map((p: any) => ({
+						id: p.user_id,
+						email: p.email,
+						role: p.role,
+						username: p.users?.username ?? undefined,
+						avatar_url: p.users?.avatar_url ?? undefined,
+					})) ?? [];
+
+				setFlow({
+					...data,
+					type: type === "couple" ? "couple" : "shared",
+					members,
+				});
+			} else {
+				({ data, error } = await supabase
+					.from("flows")
+					.select(
+						"id, title, bio, created_at, updated_at, user_id, cover_photo_url, cover_photo_blurhash, tags"
+					)
+					.eq("id", flowId)
+					.single());
+
+				if (error || !data) throw error || new Error("Flow not found");
+
+				setFlow({
+					...data,
+					type: "personal",
+				});
+			}
+		} catch (err: any) {
+			console.error("❌ Error loading flow:", err.message);
+			setError("Failed to load flow.");
+			toast.error("Failed to load flow.");
+		} finally {
+			setFlowLoading(false);
+		}
+	};
 
 	useEffect(() => {
 		if (!flowId || typeof flowId !== "string") return;
 		if (status !== "authenticated" || !session?.user?.id) return;
-
-		const fetchFlow = async () => {
-			setFlowLoading(true);
-			try {
-				let data, error;
-
-				if (type === "shared") {
-					({ data, error } = await supabase
-						.from("shared_flows")
-						.select(
-							"id, title, bio, created_at, user_id, cover_photo_url, cover_photo_blurhash, tags"
-						)
-						.eq("id", flowId)
-						.single());
-				} else {
-					({ data, error } = await supabase
-						.from("flows")
-						.select(
-							"id, title, bio, created_at, user_id, cover_photo_url, cover_photo_blurhash, tags"
-						)
-						.eq("id", flowId)
-						.single());
-				}
-
-				if (error || !data) throw error || new Error("Flow not found");
-				setFlow(data);
-			} catch (err: any) {
-				console.error("❌ Error loading flow:", err.message);
-				setError("Failed to load flow.");
-				toast.error("Failed to load flow.");
-			} finally {
-				setFlowLoading(false);
-			}
-		};
-
 		fetchFlow();
 	}, [flowId, status, session?.user?.id, type]);
 
@@ -119,14 +169,65 @@ export default function FlowIdPage() {
 						ascending = false;
 				}
 
-				const { data, error } = await supabase
-					.from("moments")
-					.select("id, flow_id, title, created_at, updated_at, snippet")
-					.eq("flow_id", flowId)
-					.order(column, { ascending });
+				if (flow.type === "personal") {
+					const { data, error } = await supabase
+						.from("moments")
+						.select("id, flow_id, title, created_at, updated_at, snippet")
+						.eq("flow_id", flowId)
+						.order(column, { ascending });
 
-				if (error) throw error;
-				setMoments(data ?? []);
+					if (error) throw error;
+
+					const momentsWithType = (data ?? []).map((m: any) => ({
+						...m,
+						type: "personal",
+					}));
+
+					setMoments(momentsWithType);
+				} else {
+					const { data, error } = await supabase
+						.from("shared_moments")
+						.select(
+							`
+								id,
+								flow_id,
+								title,
+								created_at,
+								updated_at,
+								snippet,
+								user_id,
+								users (
+									username,
+									email,
+									avatar_url
+								)
+							`
+						)
+						.eq("flow_id", flowId)
+						.order(column, { ascending });
+
+					if (error) throw error;
+
+					const momentsWithAuthor = (data ?? []).map((m: any) => ({
+						id: m.id,
+						flow_id: m.flow_id,
+						title: m.title,
+						created_at: m.created_at,
+						updated_at: m.updated_at,
+						snippet: m.snippet,
+						author: m.users
+							? {
+									user_id: m.user_id,
+									username: m.users.username,
+									email: m.users.email,
+									avatar_url: m.users.avatar_url,
+							  }
+							: undefined,
+						type: flow.type,
+					}));
+
+					setMoments(momentsWithAuthor);
+				}
 			} catch (err: any) {
 				console.error("❌ Error loading moments:", err.message);
 				toast.error("Failed to load moments.");
@@ -137,8 +238,6 @@ export default function FlowIdPage() {
 
 		fetchMoments();
 	}, [flowId, flow, sortByValue]);
-	
-	console.log(flow)
 
 	const handleRename = (moment: Moment) => {
 		setSelectedMoment(moment);
@@ -244,37 +343,182 @@ export default function FlowIdPage() {
 		toast.success("Moment duplicated successfully.");
 	};
 
-	const handleSaveFlow = async(data: {
+	const handleSaveFlow = async (data: {
 		id?: string;
 		title: string;
 		bio?: string;
-		tags?: string[]
+		tags?: string[];
+		memberIds?: MemberEntry[];
+		inviteEmails?: string[];
+		type?: "personal" | "shared" | "couple";
 	}) => {
-		if (!data.id) return;
+		if (!data.id || !session?.user?.id) return;
+
 		setFlowLoading(true);
 		setError(null);
-		const { error } = await supabase
-			.from("flows")
-			.update({ title: data.title, bio: data.bio, tags: data.tags })
-			.eq("id", data.id);
-		if (error) {
-			setError(error.message);
+
+		try {
+			if (data.type === "personal") {
+				// Update personal flow
+				const { error } = await supabase
+					.from("flows")
+					.update({
+						title: data.title,
+						bio: data.bio ?? "",
+						tags: data.tags ?? [],
+						updated_at: new Date().toISOString(),
+					})
+					.eq("id", data.id)
+					.eq("user_id", session.user.id);
+
+				if (error) {
+					console.error("❌ Error updating personal flow:", error);
+					setError(error.message);
+					toast.error("Failed to update personal flow.");
+					return;
+				}
+			} else {
+				// Update shared flow
+				const { error: flowError } = await supabase
+					.from("shared_flows")
+					.update({
+						title: data.title,
+						bio: data.bio ?? "",
+						tags: data.tags ?? [],
+						updated_at: new Date().toISOString(),
+					})
+					.eq("id", data.id)
+					.eq("user_id", session.user.id);
+
+				if (flowError) {
+					console.error("❌ Error updating shared flow:", flowError);
+					setError(flowError.message);
+					toast.error("Failed to update shared flow.");
+					return;
+				}
+
+				// ➤ Fetch existing participants
+				const { data: existingParticipants, error: fetchParticipantsError } =
+					await supabase
+						.from("shared_flow_participants")
+						.select("user_id, email, role")
+						.eq("flow_id", data.id);
+
+				if (fetchParticipantsError) {
+					console.error(
+						"⚠️ Failed to fetch existing participants:",
+						fetchParticipantsError
+					);
+					toast.error("Failed to fetch existing participants.");
+					return;
+				}
+
+				// ➤ Separate owner
+				const existingOwnerId = existingParticipants.find(
+					(p) => p.role === "owner"
+				)?.user_id;
+
+				// ➤ Clean inputs
+				const memberEntries = data.memberIds ?? [];
+				const inviteEmails = data.inviteEmails ?? [];
+
+				const existingUserIds = existingParticipants
+					.filter((p) => p.user_id && p.role !== "owner")
+					.map((p) => p.user_id as string);
+
+				const existingEmails = existingParticipants
+					.filter((p) => p.email)
+					.map((p) => p.email as string);
+
+				const newMemberIds = memberEntries.filter(
+					(m) =>
+						m.id !== existingOwnerId && !existingUserIds.includes(m.id ?? "")
+				);
+
+				const newInviteEmails = inviteEmails.filter(
+					(email) => !existingEmails.includes(email)
+				);
+
+				const removedUserIds = existingUserIds.filter(
+					(uid) => !memberEntries.some((m) => m.id === uid)
+				);
+
+				const removedEmails = existingEmails.filter(
+					(email) => !inviteEmails.includes(email)
+				);
+
+				// ➤ Delete removed participants
+				if (removedUserIds.length > 0) {
+					const { error: deleteUsersError } = await supabase
+						.from("shared_flow_participants")
+						.delete()
+						.eq("flow_id", data.id)
+						.in("user_id", removedUserIds);
+
+					if (deleteUsersError) {
+						console.error(
+							"⚠️ Failed to remove participants:",
+							deleteUsersError
+						);
+						toast.error("Failed to remove some participants.");
+					}
+				}
+
+				if (removedEmails.length > 0) {
+					const { error: deleteEmailsError } = await supabase
+						.from("shared_flow_participants")
+						.delete()
+						.eq("flow_id", data.id)
+						.in("email", removedEmails);
+
+					if (deleteEmailsError) {
+						console.error(
+							"⚠️ Failed to remove invite emails:",
+							deleteEmailsError
+						);
+						toast.error("Failed to remove some email invites.");
+					}
+				}
+
+				// ➤ Insert new participants
+				const newRows = [
+					...newMemberIds.map((m) => ({
+						flow_id: data.id,
+						user_id: m.id,
+						email: m.email,
+						role: "pending",
+					})),
+					...newInviteEmails.map((email) => ({
+						flow_id: data.id,
+						email,
+						role: "pending",
+					})),
+				];
+
+				if (newRows.length > 0) {
+					const { error: insertError } = await supabase
+						.from("shared_flow_participants")
+						.insert(newRows);
+
+					if (insertError) {
+						console.error("⚠️ Failed to add new participants:", insertError);
+						toast.error("Failed to add new participants.");
+					}
+				}
+			}
+
+			toast.success( "Flow updated successfully." );
+			setDialogOpen(false);
+			await fetchFlow()
+		} catch (err: any) {
+			console.error( "❌ Error during flow update:", err.message );
 			setFlowLoading(false);
-			return;
-		} else {
-			setFlow((prev: any) => {
-				if (!prev) return null;
-				return {
-					...prev,
-					title: data.title,
-					bio: data.bio ?? prev.bio ?? null,
-					tags: data.tags ?? prev.tags ?? []
-				};
-			});
+			setError(err.message);
+			toast.error("An unexpected error occurred.");
+		} finally {
+			setFlowLoading(false);
 		}
-		setDialogOpen(false);
-		setFlowLoading(false);
-	}
+	};
 
 	const isLatestMoment = (moment: Moment) => {
 		if (moments.length === 0) return false;
@@ -283,6 +527,57 @@ export default function FlowIdPage() {
 			return timestamp > max ? timestamp : max;
 		}, -Infinity);
 		return new Date(moment.updated_at).getTime() === latestTimestamp;
+	};
+
+	const handleCreateNewMoment = async (flowId: string | undefined) => {
+		if (!flow || !flowId || !session?.user?.id) return;
+
+		try {
+			let insertResponse;
+
+			if (flow.type === "personal") {
+				insertResponse = await supabase
+					.from("moments")
+					.insert({
+						title: "Untitled Moment",
+						content: "",
+						snippet: "",
+						flow_id: flowId,
+						user_id: session.user.id,
+					})
+					.select("id")
+					.single();
+			} else {
+				insertResponse = await supabase
+					.from("shared_moments")
+					.insert({
+						title: "Untitled Moment",
+						content: "",
+						snippet: "",
+						flow_id: flowId,
+						user_id: session.user.id,
+					})
+					.select("id")
+					.single();
+			}
+
+			const { data, error } = insertResponse;
+
+			if (error || !data?.id) {
+				console.error("❌ Failed to create moment:", error);
+				toast.error("Failed to create moment.");
+				return;
+			}
+
+			router.push(
+				`/flows/${flowId}/${data.id}${
+					flow.type !== "personal" ? "?type=shared" : ""
+				}`
+			);
+		} catch (err) {
+			console.error("❌ Moment creation failed:", err);
+			toast.error("Unexpected error occurred while creating a moment.");
+		}
 	};
 
 	if (error) {
@@ -362,74 +657,82 @@ export default function FlowIdPage() {
 											}}
 											unoptimized
 										/>
-										<Button
-											variant='secondary'
-											className='hidden group-hover:block absolute top-5 right-5 z-50 opacity-0 group-hover:opacity-100 transition-all duration-300'
-											onClick={() => setCoverDialogOpen(true)}
-										>
-											<Icons.pencil className='shrink-0' />
-										</Button>
-										<CoverPhotoDialog
-											open={coverDialogOpen}
-											onOpenChange={setCoverDialogOpen}
-											flowId={flow.id}
-											onCoverUpdated={(url, blurhash) => {
-												setFlow((prev) =>
-													prev
-														? {
-																...prev,
-																cover_photo_url: url,
-																cover_photo_blurhash: blurhash,
-														  }
-														: prev
-												);
-											}}
-										/>
+										{canEdit && (
+											<>
+												<Button
+													variant='secondary'
+													className='hidden group-hover:block absolute top-5 right-5 z-50 opacity-0 group-hover:opacity-100 transition-all duration-300'
+													onClick={() => setCoverDialogOpen(true)}
+												>
+													<Icons.pencil className='shrink-0' />
+												</Button>
+												<CoverPhotoDialog
+													open={coverDialogOpen}
+													onOpenChange={setCoverDialogOpen}
+													flowId={flow.id}
+													onCoverUpdated={(url, blurhash) => {
+														setFlow((prev) =>
+															prev
+																? {
+																		...prev,
+																		cover_photo_url: url,
+																		cover_photo_blurhash: blurhash,
+																  }
+																: prev
+														);
+													}}
+												/>
+											</>
+										)}
 									</div>
 								) : (
-									<div className='relative w-full mb-5'>
-										<Button
-											variant='secondary'
-											className='flex items-center gap-1'
-											onClick={() => setCoverDialogOpen(true)}
-										>
-											<Icons.image className='shrink-0' />
-											<p>Add cover</p>
-										</Button>
-										<CoverPhotoDialog
-											open={coverDialogOpen}
-											onOpenChange={setCoverDialogOpen}
-											flowId={flow.id}
-											bannerExist={false}
-											onCoverUpdated={(url, blurhash) => {
-												setFlow((prev) =>
-													prev
-														? {
-																...prev,
-																cover_photo_url: url,
-																cover_photo_blurhash: blurhash,
-														  }
-														: prev
-												);
-											}}
-										/>
-									</div>
+									canEdit && (
+										<div className='relative w-full mb-5'>
+											<Button
+												variant='secondary'
+												className='flex items-center gap-1'
+												onClick={() => setCoverDialogOpen(true)}
+											>
+												<Icons.image className='shrink-0' />
+												<p>Add cover</p>
+											</Button>
+											<CoverPhotoDialog
+												open={coverDialogOpen}
+												onOpenChange={setCoverDialogOpen}
+												flowId={flow.id}
+												bannerExist={false}
+												onCoverUpdated={(url, blurhash) => {
+													setFlow((prev) =>
+														prev
+															? {
+																	...prev,
+																	cover_photo_url: url,
+																	cover_photo_blurhash: blurhash,
+															  }
+															: prev
+													);
+												}}
+											/>
+										</div>
+									)
 								)}
 								<div className='flex flex-col group gap-5 relative'>
-									<NewFlowDialog
-										flow={flow}
-										open={dialogOpen}
-										onOpenChange={(open) => setDialogOpen(open)}
-										onSave={handleSaveFlow}
-										clearOnClose={false}
-									>
-										<Button
-											variant='secondary'
-											className='hidden group-hover:block absolute top-0 right-5 z-50 opacity-0 group-hover:opacity-100 transition-all duration-300'
+									{canEdit && (
+										<NewFlowDialog
+											flow={flow}
+											open={dialogOpen}
+											onOpenChange={(open) => setDialogOpen(open)}
+											onSave={handleSaveFlow}
+											clearOnClose={false}
 										>
-											<Icons.pencil className='shrink-0' />
-										</Button>
-									</NewFlowDialog>
+											<Button
+												variant='secondary'
+												className='hidden group-hover:block absolute top-0 right-5 z-50 opacity-0 group-hover:opacity-100 transition-all duration-300'
+											>
+												<Icons.pencil className='shrink-0' />
+											</Button>
+										</NewFlowDialog>
+									)}
 									<h1 className='font-libre font-semibold text-2xl'>
 										{flow.title || "Untitled Flow"}
 									</h1>
@@ -450,7 +753,7 @@ export default function FlowIdPage() {
 											))}
 										</div>
 									)}
-									<div>
+									<div className='flex items-center justify-between'>
 										<p className='text-gray-500 text-xs'>
 											Created on: {formatDate(flow.created_at)}
 										</p>
@@ -472,7 +775,17 @@ export default function FlowIdPage() {
 								/>
 							</div>
 						</div>
-						<div className='bg-white w-full flex items-center justify-end'>
+						<div className='bg-white w-full flex items-center pt-5 justify-between'>
+							<Button
+								variant='primary'
+								onClick={(e) => handleCreateNewMoment(flow?.id)}
+								className='group cursor-pointer select-none flex items-center justify-center'
+							>
+								<div className='gap-2 flex items-center justify-center'>
+									<Icons.moment />
+									<h1>Create new moment</h1>
+								</div>
+							</Button>
 							<div>
 								<SortByComboBox
 									value={sortByValue}
@@ -493,9 +806,15 @@ export default function FlowIdPage() {
 							))}
 						</div>
 					) : flow && moments.length === 0 ? (
-						<p className='text-muted-foreground mt-4'>
-							No moments yet. Add your first one.
-						</p>
+						<Card
+							onClick={() => setDialogOpen(!dialogOpen)}
+							className='bg-muted col-span-1 md:col-span-2 lg:col-span-3 cursor-pointer'
+						>
+							<CardContent className='flex flex-col items-center justify-center h-32 text-muted-foreground p-6'>
+								<Icons.moment className='h-8 w-8 mb-2 text-muted-foreground/50' />
+								<p aria-live='polite'>No moments yet. Add your first one.</p>
+							</CardContent>
+						</Card>
 					) : (
 						<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2 pb-10'>
 							{moments.map((moment) => (

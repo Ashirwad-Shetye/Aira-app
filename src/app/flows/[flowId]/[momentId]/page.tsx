@@ -1,7 +1,7 @@
  "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import debounce from "lodash/debounce";
 import BottomControls from "@/components/bottom-controls/bottom-controls";
@@ -13,9 +13,16 @@ import AutoResizingTitleTextarea from "@/components/editor/auto-resizing-title-t
 import ScrollableHeaderLayout from "@/components/layouts/scrollable-header-layout";
 import { generateSnippet } from "@/lib/text-utils";
 import { useVoiceTyping } from "@/hooks/use-voice-typing";
+import { toast } from "sonner";
+import { MomentAuthor } from "@/types/moments";
+import { useSession } from "next-auth/react";
 
 export default function MomentEditorPage() {
 	const { flowId, momentId } = useParams();
+	const searchParams = useSearchParams();
+	const type = searchParams.get( "type" );
+	const { data: session } = useSession();
+	
 	const scrollContainerRef = useRef<HTMLDivElement>(null);
 	const editorRef = useRef<any>(null);
 	const [flowTitle, setFlowTitle] = useState("");
@@ -24,51 +31,119 @@ export default function MomentEditorPage() {
 	const [isSaving, setIsSaving] = useState(false);
 	const [isFlowLoading, setIsFlowLoading] = useState(true);
 	const [isMomentLoading, setIsMomentLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
+	const [ error, setError ] = useState<string | null>( null );
+	const [author, setAuthor] = useState<MomentAuthor>()
 
-	// Fetch flow
-	useEffect(() => {
-		if (!flowId || typeof flowId !== "string") return;
-		const fetchFlow = async () => {
-			setIsFlowLoading(true);
-			const { data, error } = await supabase
-				.from("flows")
-				.select("title")
-				.eq("id", flowId)
-				.single();
-			if (error || !data) {
-				console.error("❌ Flow load error:", error);
-				setError("Failed to load flow.");
+	const fetchFlow = async () => {
+		setIsFlowLoading(true);
+		try {
+			let data: any, error;
+
+			if (type === "shared" || type === "couple") {
+				({ data, error } = await supabase
+					.from("shared_flows")
+					.select("id, title")
+					.eq("id", flowId)
+					.maybeSingle());
+
+				if (error || !data) throw error || new Error("Flow not found");
+
+				setFlowTitle(data.title);
 			} else {
+				({ data, error } = await supabase
+					.from("flows")
+					.select(
+						"id, title"
+					)
+					.eq("id", flowId)
+					.maybeSingle());
+
+				if (error || !data) throw error || new Error("Flow not found");
+
 				setFlowTitle(data.title);
 			}
+		} catch (err: any) {
+			console.error("❌ Error loading flow:", err.message);
+			setError("Failed to load flow.");
+			toast.error("Failed to load flow.");
+		} finally {
 			setIsFlowLoading(false);
-		};
+		}
+	};
+
+	const isEditable =
+		type === "personal" ||
+		(session?.user?.id && author?.user_id === session.user.id);
+
+	useEffect(() => {
+		if (!flowId || typeof flowId !== "string") return;
 		fetchFlow();
-	}, [flowId]);
+	}, [flowId, type]);
 
 	// Fetch moment
 	useEffect(() => {
 		if (!momentId || typeof momentId !== "string") return;
+
 		const fetchMoment = async () => {
 			setIsMomentLoading(true);
-			const { data, error } = await supabase
-				.from("moments")
-				.select("title, content")
-				.eq("id", momentId)
-				.single();
-			if (error || !data) {
-				console.error("❌ Moment load error:", error);
+			try {
+				if (type === "shared" || type === "couple") {
+					const { data, error } = await supabase
+						.from("shared_moments")
+						.select(
+							`
+								title,
+								content,
+								user_id,
+								users (
+									username,
+									email,
+									avatar_url
+								)
+							`
+						)
+						.eq("id", momentId)
+						.single();
+					
+					if (error || !data)
+						throw error || new Error("Shared moment not found.");
+
+					setTitle(data.title || "");
+					setContent( data.content || "" );
+					const author = data.users as unknown as {
+						username: any;
+						email: any;
+						avatar_url: any;
+					};
+					setAuthor( {
+						email: author.email,
+						avatar_url: author.avatar_url,
+						username: author.username,
+						user_id: data.user_id
+					})
+				} else {
+					const { data, error } = await supabase
+						.from("moments")
+						.select("title, content")
+						.eq("id", momentId)
+						.single();
+
+					if (error || !data) throw error || new Error("Moment not found.");
+
+					setTitle(data.title || "");
+					setContent(data.content || "");
+				}
+			} catch (err: any) {
+				console.error("❌ Moment load error:", err.message);
 				setError("Failed to load moment.");
-			} else {
-				setTitle(data.title || "");
-				setContent(data.content || "");
+			} finally {
+				setIsMomentLoading(false);
 			}
-			setIsMomentLoading(false);
 		};
+
 		fetchMoment();
-	}, [ momentId ] );
-	
+	}, [momentId, type]);
+
 	const debouncedOnText = useCallback(
 		debounce((text: string) => {
 			if (editorRef.current) {
@@ -89,18 +164,39 @@ export default function MomentEditorPage() {
 	});
 
 	const saveMoment = async (updatedTitle: string, updatedContent: string) => {
-		setIsSaving( true );
-		const cleanSnippet = generateSnippet(updatedContent)
-		const { error } = await supabase
-			.from("moments")
-			.update({
-				title: updatedTitle,
-				content: updatedContent,
-				snippet: cleanSnippet,
-				updated_at: new Date().toISOString(),
-			})
-			.eq("id", momentId);
-		if (error) console.error("❌ Failed to save moment:", error);
+		setIsSaving(true);
+		const cleanSnippet = generateSnippet(updatedContent);
+		const updated_at = new Date().toISOString();
+
+		let result;
+
+		if (type === "shared" || type === "couple") {
+			result = await supabase
+				.from("shared_moments")
+				.update({
+					title: updatedTitle,
+					content: updatedContent,
+					snippet: cleanSnippet,
+					updated_at,
+				})
+				.eq("id", momentId);
+		} else {
+			result = await supabase
+				.from("moments")
+				.update({
+					title: updatedTitle,
+					content: updatedContent,
+					snippet: cleanSnippet,
+					updated_at,
+				})
+				.eq("id", momentId);
+		}
+
+		const { error } = result;
+		if (error) {
+			console.error("❌ Failed to save moment:", error);
+			toast.error("Failed to save moment.");
+		}
 		setIsSaving(false);
 	};
 
@@ -167,6 +263,7 @@ export default function MomentEditorPage() {
 									setTitle(val);
 									debouncedSave(val, content);
 								}}
+								readOnly={!isEditable}
 								placeholder='Your moment title...'
 								maxLength={300}
 							/>
@@ -178,6 +275,7 @@ export default function MomentEditorPage() {
 										debouncedSave(title, html);
 									}}
 									editorRef={editorRef}
+									readOnly={!isEditable}
 								/>
 							</div>
 						</>

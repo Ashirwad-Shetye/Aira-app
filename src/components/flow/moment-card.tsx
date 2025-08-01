@@ -58,7 +58,14 @@ const MomentCard = ({
 	}, [isDeleting]);
 
 	const handleOpenMoment = (momentId: string) => {
-		router.push(`/flows/${flowId}/${momentId}`);
+		if (!flowId) {
+			return;
+		}
+		if (flow.type === "personal") {
+			router.push(`/flows/${flowId}/${momentId}`);
+		} else {
+			router.push(`/flows/${flowId}/${momentId}?type=shared`);
+		}
 	};
 
 	return (

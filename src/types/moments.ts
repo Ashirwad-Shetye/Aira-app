@@ -8,4 +8,13 @@ export type Moment = {
   created_at: string;
   updated_at: string
   snippet?: string
+  author?: MomentAuthor
+  type?: 'personal' | 'shared' | 'couple';
 };
+
+export interface MomentAuthor {
+	user_id: string;
+	username: string;
+	email: string;
+	avatar_url?: string;
+}
