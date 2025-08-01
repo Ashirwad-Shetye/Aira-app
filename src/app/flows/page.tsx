@@ -20,7 +20,7 @@ import { MemberEntry } from "@/components/member-input/member-input";
 
 const Flows = () => {
 	const [flows, setFlows] = useState<Flow[]>([]);
-	const [isLoading, setIsLoading] = useState(false);
+	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const { data: session, status } = useSession();
 	const [dialogOpen, setDialogOpen] = useState(false);
@@ -475,7 +475,10 @@ const Flows = () => {
 						) : (
 							<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-10'>
 								{flows.length === 0 ? (
-									<Card onClick={() => setDialogOpen(!dialogOpen)} className='bg-muted col-span-1 md:col-span-2 lg:col-span-3 cursor-pointer'>
+									<Card
+										onClick={() => setDialogOpen(!dialogOpen)}
+										className='bg-muted col-span-1 md:col-span-2 lg:col-span-3 cursor-pointer'
+									>
 										<CardContent className='flex flex-col items-center justify-center h-32 text-muted-foreground p-6'>
 											<Icons.flow className='h-8 w-8 mb-2 text-muted-foreground/50' />
 											<p aria-live='polite'>
@@ -497,6 +500,7 @@ const Flows = () => {
 												}
 												onEdit={handleEditFlow}
 												onDelete={handleDeleteFlow}
+												onRefreshFlows={fetchFlows}
 											/>
 										))
 								)}

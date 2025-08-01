@@ -73,15 +73,20 @@ export function NewFlowDialog(props: NewFlowDialogProps = {}) {
 	>([]);
 	const [isPending, startTransition] = useTransition();
 	const { data: session } = useSession();
-
+	
 	const isEdit = !!flow;
 
 	useEffect(() => {
-		if (flow) {
+		if ( flow ) {
+			const preSelectedMembers: MemberEntry[] = flow?.members
+				? flow.members
+						.filter((member) => member.role !== "owner")
+						.map((member) => ({ id: member.id, email: member.email }))
+				: [];
 			setTitle(flow.title || "Untitled Flow");
 			setBio(flow.bio || "");
 			setTags(flow.tags ?? []);
-
+			setMembers(preSelectedMembers)
 			setFlowType(flow.type ?? "personal");
 		} else {
 			// If creating new
