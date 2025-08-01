@@ -266,11 +266,6 @@ const Flows = () => {
 					return;
 				}
 
-				// ➤ Clean inputs
-				const memberEntries = data.memberIds ?? [];
-				const inviteEmails = data.inviteEmails ?? [];
-				const currentUserId = session.user.id;
-
 				// ➤ Fetch existing participants
 				const { data: existingParticipants, error: fetchParticipantsError } =
 					await supabase
@@ -287,17 +282,26 @@ const Flows = () => {
 					return;
 				}
 
+				// ➤ Separate owner
+				const existingOwnerId = existingParticipants.find(
+					(p) => p.role === "owner"
+				)?.user_id;
+
+				// ➤ Clean inputs
+				const memberEntries = data.memberIds ?? [];
+				const inviteEmails = data.inviteEmails ?? [];
+
 				const existingUserIds = existingParticipants
-					.filter((p) => p.user_id)
+					.filter((p) => p.user_id && p.role !== "owner")
 					.map((p) => p.user_id as string);
 
 				const existingEmails = existingParticipants
 					.filter((p) => p.email)
 					.map((p) => p.email as string);
 
-				// ➤ Calculate new and removed participants
 				const newMemberIds = memberEntries.filter(
-					(m) => m.id !== currentUserId && !existingUserIds.includes(m.id ?? "")
+					(m) =>
+						m.id !== existingOwnerId && !existingUserIds.includes(m.id ?? "")
 				);
 
 				const newInviteEmails = inviteEmails.filter(
@@ -305,8 +309,7 @@ const Flows = () => {
 				);
 
 				const removedUserIds = existingUserIds.filter(
-					(uid) =>
-						uid !== currentUserId && !memberEntries.some((m) => m.id === uid)
+					(uid) => !memberEntries.some((m) => m.id === uid)
 				);
 
 				const removedEmails = existingEmails.filter(
@@ -322,7 +325,10 @@ const Flows = () => {
 						.in("user_id", removedUserIds);
 
 					if (deleteUsersError) {
-						console.error("⚠️ Failed to remove participants:", deleteUsersError);
+						console.error(
+							"⚠️ Failed to remove participants:",
+							deleteUsersError
+						);
 						toast.error("Failed to remove some participants.");
 					}
 				}

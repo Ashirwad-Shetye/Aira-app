@@ -11,6 +11,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { signOut, useSession } from "next-auth/react";
 import Icons from "../ui/icons";
+import { getInitialChar } from "@/lib/text-utils";
 
 const menuItems = [
 	{
@@ -50,11 +51,6 @@ const ProfileMenu = () => {
 
 	const userImage = session?.user?.image ?? "";
 	const userName = session?.user?.name || "NA";
-	const initials = userName
-		.split(" ")
-		.map((n) => n[0])
-		.join("")
-		.toUpperCase();
 
 	return (
 		<DropdownMenu>
@@ -65,7 +61,7 @@ const ProfileMenu = () => {
 							src={userImage}
 							alt={userName}
 						/>
-						<AvatarFallback>{initials}</AvatarFallback>
+						<AvatarFallback>{getInitialChar(userName)}</AvatarFallback>
 					</Avatar>
 				</div>
 			</DropdownMenuTrigger>

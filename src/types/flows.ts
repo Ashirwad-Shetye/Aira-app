@@ -19,6 +19,7 @@ export type Flow = {
 export type SharedFlowMembers = {
 	id: string,
 	email: string,
+	username: string
 	role: 'owner' | 'member' | "pending";
 	avatar_url?: string
 }

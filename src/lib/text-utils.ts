@@ -7,3 +7,11 @@ export function generateSnippet( html: string, maxLength = 160 ): string {
 
   return plain.length > maxLength ? plain.slice(0, maxLength) + "..." : plain;
 }
+
+export const getInitialChar = ( str: string ) => {
+  return str
+		.split(" ")
+		.map((n) => n[0])
+		.join("")
+		.toUpperCase();
+}

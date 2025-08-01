@@ -19,6 +19,7 @@ import {
 import { supabase } from '@/lib/supabase/client';
 import { useSession } from 'next-auth/react';
 import { Badge } from '../ui/badge';
+import MultiAvatarPopover from '../ui/members/multi-avatar-popover';
 
 type Props = {
     flow: Flow
@@ -31,8 +32,12 @@ const FlowCard = ( { flow, latestFlow, onEdit, onDelete }: Props ) => {
 	const router = useRouter();
 	const {data: session} = useSession()
 
-    const handleOpenFlow = (flowId: string) => {
-        router.push(`/flows/${flowId}`);
+	const handleOpenFlow = ( flowId: string ) => {
+		if ( flow.type === "personal" ) {
+			router.push(`/flows/${flowId}`);
+		} else {
+			router.push(`/flows/${flow.id}?type=shared`);
+		}
 	};
 
 	const handleCreateNewMoment = async (flowId: string) => {
@@ -99,13 +104,16 @@ const FlowCard = ( { flow, latestFlow, onEdit, onDelete }: Props ) => {
 							))}
 						</div>
 					)}
-					<div className='text-sm'>
+					<div className='text-sm flex items-center justify-between'>
 						<p className='text-muted-foreground border bg-white rounded-xs px-2 py-0.5 cursor-default w-fit'>
 							{flow.moment_count ?? 0}{" "}
 							{flow.moment_count === 1 ? "moment" : "moments"}
 						</p>
+						{flow.members && (
+							<MultiAvatarPopover members={flow.members}/>
+						)}
 					</div>
-					<div className='flex items-center gap-5 justify-between w-full'>
+					<div className='flex items-center gap-5 justify-between w-full border-t border-gray-300 pt-3'>
 						<div className='flex items-center justify-between text-sm cursor-default'>
 							<p className='text-xs text-gray-500'>
 								Last activity:{" "}
