@@ -51,7 +51,12 @@ const MultiAvatarPopover = ({ members }: Props) => {
 					))}
 				</div>
 			</HoverCardTrigger>
-			<HoverCardContent className='w-fit flex flex-col gap-2'>
+			<HoverCardContent
+				onClick={(e) => {
+					e.stopPropagation();
+				}}
+				className='w-fit flex flex-col gap-2'
+			>
 				{sortedMembers.map((member, idx) => (
 					<div
 						key={idx}

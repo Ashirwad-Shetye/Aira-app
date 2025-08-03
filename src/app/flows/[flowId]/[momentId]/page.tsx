@@ -71,10 +71,6 @@ export default function MomentEditorPage() {
 		}
 	};
 
-	const isEditable =
-		type === "personal" ||
-		(session?.user?.id && author?.user_id === session.user.id);
-
 	useEffect(() => {
 		if (!flowId || typeof flowId !== "string") return;
 		fetchFlow();
@@ -220,7 +216,11 @@ export default function MomentEditorPage() {
 		};
 		document.addEventListener("keydown", handleKeyDown);
 		return () => document.removeEventListener("keydown", handleKeyDown);
-	}, [title, content, momentId]);
+	}, [ title, content, momentId ] );
+	
+	const isEditable =
+		!type ||
+		(session?.user?.id && author?.user_id === session.user.id);
 
 	if (error) {
 		return (

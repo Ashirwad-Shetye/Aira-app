@@ -61,7 +61,9 @@ export default function MomentEditor({
 		};
 		document.addEventListener("mousedown", handleClick);
 		return () => document.removeEventListener("mousedown", handleClick);
-	}, [showColorPanel]);
+	}, [ showColorPanel ] );
+	
+	console.log("Initial content:", initialContent);
 
 	const editor = useEditor({
 		extensions: [
@@ -74,6 +76,10 @@ export default function MomentEditor({
 			ListItem,
 			Placeholder.configure({
 				placeholder: "Start typing your moment here...",
+				emptyEditorClass: "is-editor-empty", // Class for empty editor
+				emptyNodeClass: "is-node-empty", // Class for empty nodes
+				showOnlyWhenEditable: false, // Show placeholder even in read-only mode
+				showOnlyCurrent: false, // Show placeholder for all empty nodes
 			}),
 		],
 		content: initialContent || "",
