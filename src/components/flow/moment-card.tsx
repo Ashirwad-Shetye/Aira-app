@@ -15,6 +15,8 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
+import { useSession } from "next-auth/react";
+import AuthorCard from "../ui/author-card";
 
 type Props = {
 	moment: Moment;
@@ -39,6 +41,7 @@ const MomentCard = ({
 }: Props) => {
 	const router = useRouter();
 	const flowId = flow?.id;
+	const { data: session } = useSession();
 
 	const [animateIn, setAnimateIn] = useState(false);
 	const [animateOut, setAnimateOut] = useState(false);
@@ -67,6 +70,9 @@ const MomentCard = ({
 			router.push(`/flows/${flowId}/${momentId}?type=shared`);
 		}
 	};
+
+	const isEditable =
+		moment.type === "personal" || (session?.user?.id && moment.author?.user_id === session.user.id);
 
 	return (
 		<div
@@ -102,89 +108,102 @@ const MomentCard = ({
 			</div>
 
 			{/* Footer */}
-			<div className='flex items-center gap-5 justify-between mt-3'>
-				{moment.updated_at && (
-					<p className='text-xs text-gray-500 truncate'>
-						Last edited: {formatDate(moment.updated_at)}
-					</p>
+			<div className='flex flex-col gap-2 mt-3'>
+				{!isEditable && moment.author && (
+					<div className='w-fit'>
+						<AuthorCard author={moment.author} />
+					</div>
 				)}
+				<div className='flex items-center gap-5 justify-between'>
+					{moment.updated_at && (
+						<p className='text-xs text-gray-500 truncate'>
+							Last edited: {formatDate(moment.updated_at)}
+						</p>
+					)}
 
-				<div className='flex items-center gap-2'>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<button
-								type='button'
-								onClick={(e) => {
-									e.stopPropagation();
-									handleOpenMoment(moment.id);
-								}}
-								className='cursor-pointer text-gray-500 h-6 w-6 flex items-center justify-center hover:bg-gray-100 duration-150 active:scale-95'
-							>
-								<Icons.edit />
-							</button>
-						</TooltipTrigger>
-						<TooltipContent
-							side='bottom'
-							sideOffset={5}
-						>
-							<p>Edit</p>
-						</TooltipContent>
-					</Tooltip>
-
-					<DropdownMenu>
-						<DropdownMenuTrigger className='outline-none focus:ring-0 cursor-pointer'>
+					<div className='flex items-center gap-2'>
+						{isEditable && (
 							<Tooltip>
 								<TooltipTrigger asChild>
-									<div
-										onClick={(e) => e.stopPropagation()}
+									<button
+										type='button'
+										onClick={(e) => {
+											e.stopPropagation();
+											handleOpenMoment(moment.id);
+										}}
 										className='cursor-pointer text-gray-500 h-6 w-6 flex items-center justify-center hover:bg-gray-100 duration-150 active:scale-95'
 									>
-										<Icons.menuDots />
-									</div>
+										<Icons.edit />
+									</button>
 								</TooltipTrigger>
 								<TooltipContent
 									side='bottom'
 									sideOffset={5}
 								>
-									<p>More</p>
+									<p>Edit</p>
 								</TooltipContent>
 							</Tooltip>
-						</DropdownMenuTrigger>
+						)}
 
-						<DropdownMenuContent
-							side='top'
-							align='end'
-							sideOffset={5}
-						>
-							<DropdownMenuItem
-								className='cursor-pointer'
-								onClick={(e) => {
-									e.stopPropagation();
-									onRename?.(moment);
-								}}
+						<DropdownMenu>
+							<DropdownMenuTrigger className='outline-none focus:ring-0 cursor-pointer'>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<div
+											onClick={(e) => e.stopPropagation()}
+											className='cursor-pointer text-gray-500 h-6 w-6 flex items-center justify-center hover:bg-gray-100 duration-150 active:scale-95'
+										>
+											<Icons.menuDots />
+										</div>
+									</TooltipTrigger>
+									<TooltipContent
+										side='bottom'
+										sideOffset={5}
+									>
+										<p>More</p>
+									</TooltipContent>
+								</Tooltip>
+							</DropdownMenuTrigger>
+
+							<DropdownMenuContent
+								side='top'
+								align='end'
+								sideOffset={5}
 							>
-								Rename
-							</DropdownMenuItem>
-							<DropdownMenuItem
-								className='cursor-pointer'
-								onClick={(e) => {
-									e.stopPropagation();
-									onDuplicate?.(moment);
-								}}
-							>
-								Duplicate
-							</DropdownMenuItem>
-							<DropdownMenuItem
-								className='cursor-pointer text-red-600'
-								onClick={(e) => {
-									e.stopPropagation();
-									onDelete?.(moment);
-								}}
-							>
-								Delete
-							</DropdownMenuItem>
-						</DropdownMenuContent>
-					</DropdownMenu>
+								{isEditable && (
+									<DropdownMenuItem
+										className='cursor-pointer'
+										onClick={(e) => {
+											e.stopPropagation();
+											onRename?.(moment);
+										}}
+									>
+										Rename
+									</DropdownMenuItem>
+								)}
+								{(isEditable || (flow?.owner_id !== undefined && flow.owner_id === session?.user.id)) && (
+									<DropdownMenuItem
+										className='cursor-pointer text-red-600'
+										onClick={(e) => {
+											e.stopPropagation();
+											onDelete?.(moment);
+										}}
+									>
+										Delete
+									</DropdownMenuItem>
+								)}
+								<DropdownMenuItem
+									className='cursor-pointer'
+									onClick={(e) => {
+										e.stopPropagation();
+										onDuplicate?.(moment);
+									}}
+								>
+									Duplicate
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
 				</div>
 			</div>
 		</div>

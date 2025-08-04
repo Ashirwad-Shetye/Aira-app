@@ -8,6 +8,7 @@ import {
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useSearchParams } from "next/navigation";
 
 interface CustomBreadcrumbProps {
 	flowId?: string;
@@ -23,7 +24,11 @@ const CustomBreadcrumb = ({
 	momentId,
 	momentTitle,
 	isLoading = false,
-}: CustomBreadcrumbProps) => {
+}: CustomBreadcrumbProps ) => {
+	
+	const searchParams = useSearchParams();
+	const type = searchParams.get("type");
+
 	if (isLoading) {
 		return (
 			<Breadcrumb>
@@ -52,7 +57,11 @@ const CustomBreadcrumb = ({
 						asChild
 						className='flex-nowrap text-nowrap truncate min-w-0'
 					>
-						<Link href={`/flows/${flowId || ""}`}>
+						<Link
+							href={`/flows/${flowId || ""}${
+								type !== undefined && "?type=shared"
+							}`}
+						>
 							<span className='inline-block align-bottom truncate whitespace-nowrap max-w-full min-w-0'>
 								{flowTitle || "..."}
 							</span>

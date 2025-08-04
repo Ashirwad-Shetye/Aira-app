@@ -30,7 +30,7 @@ const AutoResizingTitleTextarea: React.FC<AutoResizingTitleTextareaProps> = ({
 		<textarea
 			ref={textareaRef}
 			placeholder={placeholder}
-			className={`text-3xl font-libre font-semibold w-full min-h-fit h-fit resize-none text-wrap focus:outline-none px-10 overflow-hidden ${className}`}
+			className={`text-3xl font-libre font-semibold w-full min-h-fit h-fit resize-none text-wrap focus:outline-none px-10 pb-5 overflow-hidden ${className}`}
 			value={value}
 			maxLength={maxLength}
 			rows={1}

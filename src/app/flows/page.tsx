@@ -83,10 +83,6 @@ const Flows = () => {
 					user_id_input: session?.user.id,
 				}),
 			] );
-			console.log("Calling RPC with user ID:", session?.user?.id);
-			
-			console.log(personalFlowsRes.data);
-			console.log(sharedFlowsRes.data);
 
 			if (personalFlowsRes.error || sharedFlowsRes.error) {
 				throw new Error(
@@ -296,7 +292,7 @@ const Flows = () => {
 					.map((p) => p.user_id as string);
 
 				const existingEmails = existingParticipants
-					.filter((p) => p.email)
+					.filter((p) => !p.user_id && p.email)
 					.map((p) => p.email as string);
 
 				const newMemberIds = memberEntries.filter(

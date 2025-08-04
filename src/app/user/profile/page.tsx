@@ -253,23 +253,6 @@ const ProfilePage = () => {
 							>
 								<div className='flex flex-col gap-2'>
 									<label
-										htmlFor='name'
-										className='text-xs'
-									>
-										Full Name
-									</label>
-									<input
-										id='name'
-										type='text'
-										value={fullName}
-										onChange={(e) => setFullName(e.target.value)}
-										placeholder='Your full name'
-										className='px-3 py-2 border rounded w-full focus:outline-none focus:ring-1 focus:ring-primary'
-									/>
-								</div>
-
-								<div className='flex flex-col gap-2'>
-									<label
 										htmlFor='username'
 										className='text-xs'
 									>
@@ -281,6 +264,23 @@ const ProfilePage = () => {
 										value={username}
 										onChange={(e) => setUsername(e.target.value)}
 										placeholder='Unique username'
+										className='px-3 py-2 border rounded w-full focus:outline-none focus:ring-1 focus:ring-primary'
+									/>
+								</div>
+
+								<div className='flex flex-col gap-2'>
+									<label
+										htmlFor='name'
+										className='text-xs'
+									>
+										Full Name
+									</label>
+									<input
+										id='name'
+										type='text'
+										value={fullName}
+										onChange={(e) => setFullName(e.target.value)}
+										placeholder='Your full name'
 										className='px-3 py-2 border rounded w-full focus:outline-none focus:ring-1 focus:ring-primary'
 									/>
 								</div>

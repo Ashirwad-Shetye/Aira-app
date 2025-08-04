@@ -106,6 +106,7 @@ export default function FlowIdPage() {
 					...data,
 					type: type === "couple" ? "couple" : "shared",
 					members,
+					owner_id: data.user_id
 				});
 			} else {
 				({ data, error } = await supabase
@@ -388,7 +389,7 @@ export default function FlowIdPage() {
 						updated_at: new Date().toISOString(),
 					})
 					.eq("id", data.id)
-					.eq("user_id", session.user.id);
+					.eq("user_id", session.user.id); // make sure ownership is checked
 
 				if (flowError) {
 					console.error("❌ Error updating shared flow:", flowError);
@@ -417,17 +418,17 @@ export default function FlowIdPage() {
 				const existingOwnerId = existingParticipants.find(
 					(p) => p.role === "owner"
 				)?.user_id;
-
+				
 				// ➤ Clean inputs
 				const memberEntries = data.memberIds ?? [];
 				const inviteEmails = data.inviteEmails ?? [];
-
+				
 				const existingUserIds = existingParticipants
-					.filter((p) => p.user_id && p.role !== "owner")
-					.map((p) => p.user_id as string);
+				.filter((p) => p.user_id && p.role !== "owner")
+				.map((p) => p.user_id as string);
 
 				const existingEmails = existingParticipants
-					.filter((p) => p.email)
+					.filter((p) => !p.user_id && p.email)
 					.map((p) => p.email as string);
 
 				const newMemberIds = memberEntries.filter(
@@ -438,7 +439,7 @@ export default function FlowIdPage() {
 				const newInviteEmails = inviteEmails.filter(
 					(email) => !existingEmails.includes(email)
 				);
-
+				console.log(newInviteEmails);
 				const removedUserIds = existingUserIds.filter(
 					(uid) => !memberEntries.some((m) => m.id === uid)
 				);
@@ -495,6 +496,8 @@ export default function FlowIdPage() {
 					})),
 				];
 
+				console.log(newRows)
+
 				if (newRows.length > 0) {
 					const { error: insertError } = await supabase
 						.from("shared_flow_participants")
@@ -507,12 +510,10 @@ export default function FlowIdPage() {
 				}
 			}
 
-			toast.success( "Flow updated successfully." );
+			toast.success("Flow updated successfully.");
 			setDialogOpen(false);
-			await fetchFlow()
 		} catch (err: any) {
-			console.error( "❌ Error during flow update:", err.message );
-			setFlowLoading(false);
+			console.error("❌ Error during flow update:", err.message);
 			setError(err.message);
 			toast.error("An unexpected error occurred.");
 		} finally {

@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useSearchParams } from "next/navigation";
@@ -14,138 +14,125 @@ import ScrollableHeaderLayout from "@/components/layouts/scrollable-header-layou
 import { generateSnippet } from "@/lib/text-utils";
 import { useVoiceTyping } from "@/hooks/use-voice-typing";
 import { toast } from "sonner";
-import { MomentAuthor } from "@/types/moments";
 import { useSession } from "next-auth/react";
+import AuthorCard from "@/components/ui/author-card";
+import { formatDate } from "@/lib/date-convertors";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export default function MomentEditorPage() {
 	const { flowId, momentId } = useParams();
 	const searchParams = useSearchParams();
-	const type = searchParams.get( "type" );
+	const type = searchParams.get("type");
 	const { data: session } = useSession();
-	
+	const queryClient = useQueryClient();
+
 	const scrollContainerRef = useRef<HTMLDivElement>(null);
 	const editorRef = useRef<any>(null);
-	const [flowTitle, setFlowTitle] = useState("");
 	const [title, setTitle] = useState("");
 	const [content, setContent] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
-	const [isFlowLoading, setIsFlowLoading] = useState(true);
-	const [isMomentLoading, setIsMomentLoading] = useState(true);
-	const [ error, setError ] = useState<string | null>( null );
-	const [author, setAuthor] = useState<MomentAuthor>()
 
 	const fetchFlow = async () => {
-		setIsFlowLoading(true);
-		try {
-			let data: any, error;
+		const source =
+			type === "shared" || type === "couple" ? "shared_flows" : "flows";
+		const { data, error } = await supabase
+			.from(source)
+			.select("id, title")
+			.eq("id", flowId)
+			.maybeSingle();
+		if (error || !data) throw error || new Error("Flow not found");
+		return data.title;
+	};
 
-			if (type === "shared" || type === "couple") {
-				({ data, error } = await supabase
-					.from("shared_flows")
-					.select("id, title")
-					.eq("id", flowId)
-					.maybeSingle());
+	const fetchMoment = async () => {
+		if (!momentId || typeof momentId !== "string") return;
+		if (type === "shared" || type === "couple") {
+			const { data, error } = await supabase
+				.from("shared_moments")
+				.select(
+					`title, content, user_id, updated_at, users(username, email, avatar_url)`
+				)
+				.eq("id", momentId)
+				.single();
 
-				if (error || !data) throw error || new Error("Flow not found");
+			if (error || !data) throw new Error("Shared moment not found");
 
-				setFlowTitle(data.title);
-			} else {
-				({ data, error } = await supabase
-					.from("flows")
-					.select(
-						"id, title"
-					)
-					.eq("id", flowId)
-					.maybeSingle());
+			const isOtherUser = session?.user?.id !== data.user_id;
 
-				if (error || !data) throw error || new Error("Flow not found");
-
-				setFlowTitle(data.title);
+			if (isOtherUser) {
+				setTimeout(() => {
+					supabase.from("shared_moment_reads").upsert(
+						{
+							user_id: session?.user?.id,
+							moment_id: momentId,
+							read_at: new Date().toISOString(),
+						},
+						{ onConflict: "user_id, moment_id" }
+					);
+				}, 2000);
 			}
-		} catch (err: any) {
-			console.error("❌ Error loading flow:", err.message);
-			setError("Failed to load flow.");
-			toast.error("Failed to load flow.");
-		} finally {
-			setIsFlowLoading(false);
+
+			return {
+				title: data.title || "",
+				content: data.content || "",
+				updated_at: data.updated_at,
+				author: {
+					user_id: data.user_id,
+					...(data.users as unknown as {
+						username: string;
+						email: string;
+						avatar_url?: string;
+					}),
+				},
+			};
+		} else {
+			const { data, error } = await supabase
+				.from("moments")
+				.select("title, content, updated_at")
+				.eq("id", momentId)
+				.single();
+
+			if (error || !data) throw new Error("Moment not found");
+
+			return {
+				title: data.title || "",
+				content: data.content || "",
+				updated_at: data.updated_at,
+			};
 		}
 	};
 
+	const {
+		data: flowTitle,
+		isLoading: isFlowLoading,
+		error: flowError,
+	} = useQuery({
+		queryKey: ["flow", flowId, type],
+		queryFn: fetchFlow,
+		enabled: !!flowId,
+	});
+
+	const {
+		data: momentData,
+		isLoading: isMomentLoading,
+		error: momentError,
+	} = useQuery({
+		queryKey: ["moment", momentId, type],
+		queryFn: fetchMoment,
+		enabled: !!momentId,
+	});
+
 	useEffect(() => {
-		if (!flowId || typeof flowId !== "string") return;
-		fetchFlow();
-	}, [flowId, type]);
-
-	// Fetch moment
-	useEffect(() => {
-		if (!momentId || typeof momentId !== "string") return;
-
-		const fetchMoment = async () => {
-			setIsMomentLoading(true);
-			try {
-				if (type === "shared" || type === "couple") {
-					const { data, error } = await supabase
-						.from("shared_moments")
-						.select(
-							`
-								title,
-								content,
-								user_id,
-								users (
-									username,
-									email,
-									avatar_url
-								)
-							`
-						)
-						.eq("id", momentId)
-						.single();
-					
-					if (error || !data)
-						throw error || new Error("Shared moment not found.");
-
-					setTitle(data.title || "");
-					setContent( data.content || "" );
-					const author = data.users as unknown as {
-						username: any;
-						email: any;
-						avatar_url: any;
-					};
-					setAuthor( {
-						email: author.email,
-						avatar_url: author.avatar_url,
-						username: author.username,
-						user_id: data.user_id
-					})
-				} else {
-					const { data, error } = await supabase
-						.from("moments")
-						.select("title, content")
-						.eq("id", momentId)
-						.single();
-
-					if (error || !data) throw error || new Error("Moment not found.");
-
-					setTitle(data.title || "");
-					setContent(data.content || "");
-				}
-			} catch (err: any) {
-				console.error("❌ Moment load error:", err.message);
-				setError("Failed to load moment.");
-			} finally {
-				setIsMomentLoading(false);
-			}
-		};
-
-		fetchMoment();
-	}, [momentId, type]);
+		if (momentData) {
+			setTitle(momentData.title);
+			setContent(momentData.content);
+		}
+	}, [momentData]);
 
 	const debouncedOnText = useCallback(
 		debounce((text: string) => {
-			if (editorRef.current) {
-				editorRef.current.commands.focus();
-				editorRef.current.commands.insertContent(text + " ");
-			}
+			editorRef.current?.commands.focus();
+			editorRef.current?.commands.insertContent(text + " ");
 		}, 200),
 		[]
 	);
@@ -163,36 +150,21 @@ export default function MomentEditorPage() {
 		setIsSaving(true);
 		const cleanSnippet = generateSnippet(updatedContent);
 		const updated_at = new Date().toISOString();
+		const source =
+			type === "shared" || type === "couple" ? "shared_moments" : "moments";
 
-		let result;
+		const { error } = await supabase
+			.from(source)
+			.update({
+				title: updatedTitle,
+				content: updatedContent,
+				snippet: cleanSnippet,
+				updated_at,
+			})
+			.eq("id", momentId);
 
-		if (type === "shared" || type === "couple") {
-			result = await supabase
-				.from("shared_moments")
-				.update({
-					title: updatedTitle,
-					content: updatedContent,
-					snippet: cleanSnippet,
-					updated_at,
-				})
-				.eq("id", momentId);
-		} else {
-			result = await supabase
-				.from("moments")
-				.update({
-					title: updatedTitle,
-					content: updatedContent,
-					snippet: cleanSnippet,
-					updated_at,
-				})
-				.eq("id", momentId);
-		}
-
-		const { error } = result;
-		if (error) {
-			console.error("❌ Failed to save moment:", error);
-			toast.error("Failed to save moment.");
-		}
+		if (error) toast.error("Failed to save moment.");
+		queryClient.invalidateQueries({ queryKey: ["moment", momentId, type] });
 		setIsSaving(false);
 	};
 
@@ -203,29 +175,12 @@ export default function MomentEditorPage() {
 		[momentId]
 	);
 
-	useEffect(() => {
-		const handleKeyDown = (e: KeyboardEvent) => {
-			const isMac = navigator.platform.toUpperCase().includes("MAC");
-			if (
-				(isMac && e.metaKey && e.key === "s") ||
-				(!isMac && e.ctrlKey && e.key === "s")
-			) {
-				e.preventDefault();
-				saveMoment(title, content);
-			}
-		};
-		document.addEventListener("keydown", handleKeyDown);
-		return () => document.removeEventListener("keydown", handleKeyDown);
-	}, [ title, content, momentId ] );
-	
-	const isEditable =
-		!type ||
-		(session?.user?.id && author?.user_id === session.user.id);
+	const isEditable = !type || session?.user?.id === momentData?.author?.user_id;
 
-	if (error) {
+	if (flowError || momentError) {
 		return (
 			<div className='p-5 text-red-600 text-center'>
-				<p>{error}</p>
+				<p>Failed to load data.</p>
 			</div>
 		);
 	}
@@ -239,7 +194,7 @@ export default function MomentEditorPage() {
 				ref={scrollContainerRef}
 				className='flex-1 flex flex-col gap-10 pb-10 relative min-h-0 overflow-y-auto pt-5'
 			>
-				<div className='px-5 flex items-center gap-5 relative overflow-hidden min-w-0'>
+				<div className='px-5 flex items-center gap-5'>
 					<BackButton />
 					<CustomBreadcrumb
 						flowId={flowId as string}
@@ -249,7 +204,8 @@ export default function MomentEditorPage() {
 						isLoading={isFlowLoading || isMomentLoading}
 					/>
 				</div>
-				<div className='flex-1 flex flex-col sm:w-full md:w-[80%] max-w-7xl mx-auto min-h-0 px-5'>
+
+				<div className='flex flex-col sm:w-full md:w-[80%] max-w-7xl mx-auto min-h-0 px-5'>
 					{isMomentLoading ? (
 						<>
 							<div className='h-10 w-2/3 bg-gray-100 rounded mb-4 animate-pulse' />
@@ -267,7 +223,18 @@ export default function MomentEditorPage() {
 								placeholder='Your moment title...'
 								maxLength={300}
 							/>
-							<div className='flex-1 flex flex-col relative min-h-0'>
+							{!isEditable && momentData?.author && (
+								<div className='px-10 w-fit flex items-center gap-5 pb-5'>
+									<AuthorCard author={momentData.author} />
+									<p className='text-muted-foreground text-sm'>
+										Last Updated:{" "}
+										{momentData.updated_at
+											? formatDate(momentData.updated_at)
+											: "N/A"}
+									</p>
+								</div>
+							)}
+							<div className='flex-1 flex flex-col relative min-h-0 border-t border-gray-200'>
 								<MomentEditor
 									initialContent={content}
 									onChange={(html) => {
@@ -282,40 +249,44 @@ export default function MomentEditorPage() {
 					)}
 				</div>
 			</div>
-			<div className='flex justify-center items-center px-10 pb-5 gap-4'>
-				{voiceError && (
-					<div className='flex items-center gap-2 text-red-500 text-sm'>
-						<p>{voiceError}</p>
-						<button
-							onClick={() => setError(null)}
-							className='text-sm underline'
-						>
-							Dismiss
-						</button>
-					</div>
-				)}
-				<canvas
-					id='waveform'
-					width={300}
-					height={60}
-					className='rounded-md bg-white'
-				></canvas>
-				<button
-					onClick={isListening ? stop : start}
-					disabled={isMomentLoading || isFlowLoading}
-					className={`px-4 py-2 rounded-md text-white font-medium ${
-						isListening ? "bg-red-500" : "bg-green-600"
-					} ${
-						isMomentLoading || isFlowLoading
-							? "opacity-50 cursor-not-allowed"
-							: "hover:opacity-90"
-					} transition`}
-				>
-					{isListening ? "Stop Voice Typing" : "Start Voice Typing"}
-				</button>
-			</div>
+
+			{isEditable && !isFlowLoading && (
+				<div className='flex justify-center items-center px-10 pb-5 gap-4'>
+					{voiceError && (
+						<div className='flex items-center gap-2 text-red-500 text-sm'>
+							<p>{voiceError}</p>
+							<button
+								onClick={() => toast.dismiss()}
+								className='text-sm underline'
+							>
+								Dismiss
+							</button>
+						</div>
+					)}
+					<canvas
+						id='waveform'
+						width={300}
+						height={60}
+						className='rounded-md bg-white'
+					></canvas>
+					<button
+						onClick={isListening ? stop : start}
+						disabled={isMomentLoading || isFlowLoading}
+						className={`px-4 py-2 rounded-md text-white font-medium ${
+							isListening ? "bg-red-500" : "bg-green-600"
+						} ${
+							isMomentLoading || isFlowLoading
+								? "opacity-50 cursor-not-allowed"
+								: "hover:opacity-90"
+						} transition`}
+					>
+						{isListening ? "Stop Voice Typing" : "Start Voice Typing"}
+					</button>
+				</div>
+			)}
+
 			<BottomControls
-				status={true}
+				status={isEditable}
 				isSaving={isSaving}
 			/>
 		</ScrollableHeaderLayout>

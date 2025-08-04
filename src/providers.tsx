@@ -3,12 +3,17 @@
 import { SessionProvider } from "next-auth/react";
 import { ReactNode } from "react";
 import { Toaster } from "sonner";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient();
 
 export function Providers({ children }: { children: ReactNode }) {
 	return (
 		<SessionProvider>
-			<Toaster position="top-center"/>
-			{children}
+			<QueryClientProvider client={queryClient}>
+				<Toaster position="top-center"/>
+				{children}
+			</QueryClientProvider>
 		</SessionProvider>
 	);
 }

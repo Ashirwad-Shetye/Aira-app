@@ -76,10 +76,9 @@ export default function MomentEditor({
 			ListItem,
 			Placeholder.configure({
 				placeholder: "Start typing your moment here...",
-				emptyEditorClass: "is-editor-empty", // Class for empty editor
-				emptyNodeClass: "is-node-empty", // Class for empty nodes
-				showOnlyWhenEditable: false, // Show placeholder even in read-only mode
-				showOnlyCurrent: false, // Show placeholder for all empty nodes
+				emptyEditorClass: "is-editor-empty",
+				emptyNodeClass: "is-node-empty",
+				showOnlyWhenEditable: false,
 			}),
 		],
 		content: initialContent || "",
@@ -100,7 +99,10 @@ export default function MomentEditor({
 				editor.commands.focus("end");
 			});
 		}
-	}, [editor, editorRef]);
+		if (editor && initialContent && initialContent.trim() !== "") {
+			editor.commands.setContent(initialContent);
+		}
+	}, [editor, editorRef, initialContent]);
 
 	if (!editor) return null;
 
