@@ -183,6 +183,31 @@ export const authOptions: AuthOptions = {
         return false;
       }
     },
+    async jwt({ token, user }) {
+      if (user) {
+        token.sub = user.id;
+      }
+
+      if (token.sub) {
+        const { data: userData } = await supabaseAdmin
+          .from("users")
+          .select("id, username, full_name, email, avatar_url, bio, status")
+          .eq("id", token.sub)
+          .single();
+
+        if (userData) {
+          token.id = userData.id;
+          token.name = userData.full_name;
+          token.username = userData.username;
+          token.email = userData.email;
+          token.picture = userData.avatar_url;
+          token.bio = userData.bio;
+          token.status = userData.status;
+        }
+      }
+
+      return token;
+    }
   },
   session: {
     strategy: "jwt",
