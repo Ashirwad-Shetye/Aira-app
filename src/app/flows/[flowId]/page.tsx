@@ -802,7 +802,7 @@ export default function FlowIdPage() {
 							{Array.from({ length: 3 }).map((_, i) => (
 								<div
 									key={i}
-									className='h-80 shrink-0 bg-gray-100 animate-pulse'
+									className='h-80 shrink-0 bg-gray-100 animate-pulse rounded-md'
 								/>
 							))}
 						</div>

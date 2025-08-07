@@ -78,7 +78,7 @@ const MomentCard = ({
 		<div
 			onClick={() => handleOpenMoment(moment.id)}
 			className={clsx(
-				"p-5 bg-accent flex flex-col hover:shadow justify-between transition-all duration-300 ease-in-out transform rounded-xs",
+				"p-5 bg-accent flex flex-col hover:shadow justify-between transition-all duration-300 ease-in-out transform rounded-md",
 				{
 					"opacity-0 scale-95": (isNew && !animateIn) || animateOut,
 					"opacity-100 scale-100": isNew && animateIn,

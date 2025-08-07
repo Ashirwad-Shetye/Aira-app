@@ -129,7 +129,7 @@ const FlowCard = ( { flow, latestFlow, onEdit, onDelete, onRefreshFlows }: Props
 	return (
 		<div
 			onClick={() => handleOpenFlow(flow.id)}
-			className='p-5 bg-accent flex flex-col gap-5 hover:shadow rounded-xs justify-between transition-all duration-300 ease-in-out transform'
+			className='p-5 bg-accent flex flex-col gap-5 hover:shadow rounded-md justify-between transition-all duration-300 ease-in-out transform'
 		>
 			<div className='flex flex-col gap-5 relative cursor-default'>
 				<div className='flex items-center justify-between w-full'>
@@ -163,35 +163,37 @@ const FlowCard = ( { flow, latestFlow, onEdit, onDelete, onRefreshFlows }: Props
 						</Tooltip>
 					)}
 				</div>
-				<h1 className='text-lg font-semibold font-libre text-wrap line-clamp-3 truncate'>
-					{flow.title}
-				</h1>
-				{flow.bio && (
-					<p className='text-sm text-muted-foreground line-clamp-3 mt-1'>
-						{flow.bio}
-					</p>
-				)}
+				<div className='flex flex-col gap-2'>
+					<h1 className='text-lg font-semibold font-libre text-wrap line-clamp-3 truncate'>
+						{flow.title}
+					</h1>
+					{flow.bio && (
+						<p className='text-sm text-muted-foreground line-clamp-3'>
+							{flow.bio}
+						</p>
+					)}
+					{flow?.tags && (
+						<div className='flex flex-wrap gap-2'>
+							{flow.tags.map((tag) => (
+								<Badge
+									key={tag}
+									variant='outline'
+								>
+									<span>#{tag}</span>
+								</Badge>
+							))}
+						</div>
+					)}
+				</div>
 			</div>
 			<div className='flex flex-col gap-3'>
-				{flow?.tags && (
-					<div className='flex flex-wrap gap-2'>
-						{flow.tags.map((tag) => (
-							<Badge
-								key={tag}
-								variant='outline'
-							>
-								<span>#{tag}</span>
-							</Badge>
-						))}
-					</div>
-				)}
 				<div className='text-sm flex items-center justify-between pt-2'>
 					<div className='flex items-center gap-5'>
-						<p className='text-muted-foreground border bg-white text-xs rounded-xs px-2 py-0.5 cursor-default w-fit'>
+						<p className='text-muted-foreground border bg-white text-xs rounded-md px-2 py-0.5 cursor-default w-fit'>
 							{flow.moment_count ?? 0}{" "}
 							{flow.moment_count === 1 ? "moment" : "moments"}
 						</p>
-						{flow?.unread_count !== undefined && (
+						{flow?.unread_count !== undefined && flow?.unread_count !== 0 && (
 							<>
 								<Tooltip>
 									<TooltipTrigger asChild>

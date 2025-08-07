@@ -29,8 +29,10 @@ const DashboardPage = () => {
 						userName={userFirstname}
 						align='left'
 					/>
-					<div className='flex-1 flex flex-col py-10'>
-
+					<div className='grid grid-cols-4 py-10'>
+						<div>
+							
+						</div>
 					</div>
 				</div>
 			</div>
