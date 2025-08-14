@@ -1,38 +1,57 @@
+//  app/signup/page.tsx
 "use client";
 
-import { signIn } from "next-auth/react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-export default function LoginPage() {
+export default function SignupPage() {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
+	const [fullName, setFullName] = useState("");
 	const [error, setError] = useState("");
+	const router = useRouter();
 
-	const handleCredentialsSubmit = async (e: React.FormEvent) => {
+	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setError("");
-		const result = await signIn("credentials", {
-			email,
-			password,
-			redirect: false,
-			callbackUrl: "/dashboard",
+		const res = await fetch("/api/auth/signup", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ email, password, fullName }),
 		});
-		if (result?.error) {
-			setError(result.error);
-		} else if (result?.url) {
-			window.location.href = result.url;
+		const data = await res.json();
+		if (res.ok) {
+			router.push("/login");
+		} else {
+			setError(data.error || "Something went wrong.");
 		}
 	};
 
 	return (
 		<div className='min-h-screen grid place-items-center p-6 bg-[#F5FAF8]'>
 			<div className='w-full max-w-md space-y-6'>
-				<h1 className='text-3xl font-bold text-center'>Sign in to Aira</h1>
+				<h1 className='text-3xl font-bold text-center'>Sign Up for Aira</h1>
 				<form
-					onSubmit={handleCredentialsSubmit}
+					onSubmit={handleSubmit}
 					className='space-y-4'
 				>
+					<div>
+						<label
+							htmlFor='fullName'
+							className='block text-sm font-medium'
+						>
+							Full Name
+						</label>
+						<input
+							id='fullName'
+							type='text'
+							value={fullName}
+							onChange={(e) => setFullName(e.target.value)}
+							required
+							className='w-full border border-gray-300 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-black'
+						/>
+					</div>
 					<div>
 						<label
 							htmlFor='email'
@@ -70,40 +89,16 @@ export default function LoginPage() {
 						type='submit'
 						className='w-full bg-black text-white px-6 py-3 rounded-full hover:bg-neutral-800'
 					>
-						Sign in with Email
+						Sign Up
 					</button>
 				</form>
-				<div className='text-center'>
-					<Link
-						href='/forgot-password'
-						className='text-sm text-gray-600 hover:underline'
-					>
-						Forgot Password?
-					</Link>
-				</div>
-				<div className='relative my-4'>
-					<div className='absolute inset-0 flex items-center'>
-						<div className='w-full border-t border-gray-300'></div>
-					</div>
-					<div className='relative flex justify-center text-sm'>
-						<span className='bg-[#F5FAF8] px-2 text-gray-500'>
-							Or continue with
-						</span>
-					</div>
-				</div>
-				<button
-					onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
-					className='w-full bg-black text-white px-6 py-3 rounded-full hover:bg-neutral-800'
-				>
-					Sign in with Google
-				</button>
 				<p className='text-center text-sm text-gray-600'>
-					Don’t have an account?{" "}
+					Already have an account?{" "}
 					<Link
-						href='/signup'
+						href='/login'
 						className='text-black hover:underline'
 					>
-						Sign up
+						Sign in
 					</Link>
 				</p>
 			</div>

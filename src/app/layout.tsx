@@ -1,7 +1,6 @@
 import "./globals.css";
 import { Geist, Geist_Mono, Libre_Caslon_Text } from "next/font/google";
 import { Providers } from "@/providers";
-import { Toaster } from "sonner";
 
 const geistSans = Geist({
 	variable: "--font-geist-sans",

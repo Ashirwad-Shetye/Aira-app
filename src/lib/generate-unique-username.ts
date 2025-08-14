@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "@/lib/supabase/client";
+import { supabaseAdmin } from "./supabase/admin";
 
 export const generateUniqueUsername = async (base: string) => {
 	const baseUsername = base

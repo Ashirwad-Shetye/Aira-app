@@ -1,5 +1,6 @@
 // src/lib/server/upload-avatar-to-db.ts
-import { supabaseAdmin } from "@/lib/supabase/client";
+
+import { supabaseAdmin } from "../supabase/admin";
 
 export async function uploadAvatarToSupabase(avatarUrl: string, userId: string) {
 	if (!avatarUrl || !userId) return null;

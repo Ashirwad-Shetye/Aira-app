@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import Cropper from "react-easy-crop";
 import Dropzone from "react-dropzone";
-import { supabaseAdmin, supabase } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { useImageCrop } from "@/hooks/use-image-crop";
 import getBlurhashFromImage from "@/lib/blurhash-from-image";
@@ -68,7 +68,7 @@ export default function CoverPhotoDialog({
             const oldUrl = existingFlow?.cover_photo_url;
 
             // Step 2: Upload
-            const { data: upload, error: uploadError } = await supabaseAdmin.storage
+            const { data: upload, error: uploadError } = await supabase.storage
                 .from("flow-cover-photos")
                 .upload(fileName, croppedImage, {
                     contentType: "image/jpeg",
@@ -77,7 +77,7 @@ export default function CoverPhotoDialog({
             if (uploadError) throw new Error("Upload failed");
 
             // Step 3: Get URL
-            const url = supabaseAdmin.storage
+            const url = supabase.storage
                 .from("flow-cover-photos")
                 .getPublicUrl(fileName).data.publicUrl;
 
@@ -97,7 +97,7 @@ export default function CoverPhotoDialog({
             // Step 6: Delete old
             if (oldUrl) {
                 const oldFileName = oldUrl.split("/").pop();
-                await supabaseAdmin.storage
+                await supabase.storage
                     .from("flow-cover-photos")
                     .remove([oldFileName]);
             }
@@ -133,7 +133,7 @@ export default function CoverPhotoDialog({
         const segments = existingFlow.cover_photo_url.split("/");
         const fileName = segments[segments.length - 1];
 
-        const { error: deleteError } = await supabaseAdmin.storage
+        const { error: deleteError } = await supabase.storage
             .from("flow-cover-photos")
             .remove([fileName]);
 

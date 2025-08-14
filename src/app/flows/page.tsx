@@ -7,7 +7,7 @@ import TagsBar from "@/components/tags-bar/tags-bar";
 import Icons from "@/components/ui/icons";
 import { useSession } from "next-auth/react";
 import { Flow } from "@/types/flows";
-import { supabase, supabaseAdmin } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase/client";
 import FlowCard from "@/components/flow/flow-card";
 import ScrollableHeaderLayout from "@/components/layouts/scrollable-header-layout";
 import HeaderNavbar from "@/components/header-navbar/header-navbar";
@@ -54,6 +54,11 @@ const Flows = () => {
 		setIsLoading(true);
 		setError(null);
 
+		if (!session?.user?.id) {
+			setIsLoading(false);
+			return;
+		}
+
 		try {
 			let column = "last_activity";
 			let ascending = false;
@@ -75,14 +80,16 @@ const Flows = () => {
 					break;
 			}
 
+
+			const userId = session.user.id;
 			const [personalFlowsRes, sharedFlowsRes] = await Promise.all([
 				supabase.rpc("get_flows_with_moment_data", {
-					user_id_input: session?.user.id,
+					user_id_input: userId,
 				}),
 				supabase.rpc("get_shared_flows_with_moment_data", {
-					user_id_input: session?.user.id,
+					user_id_input: userId,
 				}),
-			] );
+			]);
 
 			if (personalFlowsRes.error || sharedFlowsRes.error) {
 				throw new Error(
@@ -168,10 +175,10 @@ const Flows = () => {
 			const coverUrl = selectedFlow.cover_photo_url;
 			if (coverUrl) {
 				const filePath = coverUrl.split("/flow-cover-photos/")[1];
-				if (filePath) {
-					const { error: storageError } = await supabaseAdmin.storage
-						.from("flow-cover-photos")
-						.remove([filePath]);
+                if (filePath) {
+                    const { error: storageError } = await supabase.storage
+                        .from("flow-cover-photos")
+                        .remove([filePath]);
 
 					if (storageError) {
 						console.warn(

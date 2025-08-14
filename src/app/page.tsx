@@ -1,11 +1,10 @@
 // src/app/page.tsx
 import Link from "next/link";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { redirect } from "next/navigation";
+import { auth } from "@/auth";
 
 export default async function LandingPage() {
-	const session = await getServerSession(authOptions);
+	const session = await auth();
 
 	if (session?.user) {
 		redirect("/dashboard");
@@ -16,12 +15,10 @@ export default async function LandingPage() {
 			<h1 className='text-4xl sm:text-5xl font-bold mb-4 tracking-tight text-black dark:text-white'>
 				Welcome to Aira
 			</h1>
-
 			<p className='text-gray-600 dark:text-gray-400 max-w-md text-base sm:text-lg mb-8'>
 				Minimal. Mindful. Beautiful journaling. Sign in to start your private or
 				shared diary.
 			</p>
-
 			<div className='flex flex-col sm:flex-row gap-4'>
 				<Link
 					href='/login'

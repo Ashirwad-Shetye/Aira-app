@@ -1,24 +1,32 @@
 // middleware.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { auth } from "@/auth";
 
-const PUBLIC_ROUTES = ["/login", "/about", "/pricing"];
+const PUBLIC_ROUTES = [
+  "/login",
+  "/signup",
+  "/about",
+  "/pricing",
+  "/forgot-password",
+  "/reset-password/:path*",
+];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (PUBLIC_ROUTES.some((route) => pathname === route || pathname.startsWith(route))) {
+  if (
+    PUBLIC_ROUTES.some(
+      (route) =>
+        pathname === route ||
+        (route.includes(":path*") && pathname.startsWith(route.split(":")[0]))
+    )
+  ) {
     return NextResponse.next();
   }
 
-  const token = await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET,
-    cookieName: "next-auth.session-token",
-  });
-
-  if (!token) {
+  const session = await auth();
+  if (!session) {
     const loginUrl = new URL("/login", request.url);
     return NextResponse.redirect(loginUrl);
   }
